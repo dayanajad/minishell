@@ -1,0 +1,2186 @@
+╔═══════════════════════════════════════════════════════════════════╗
+║                                                                   ║
+║            MINISHELL - COMPLETE STUDY GUIDE                       ║
+║                   Your Path to Success                            ║
+║                                                                   ║
+╚═══════════════════════════════════════════════════════════════════╝
+
+This guide covers EVERYTHING you need to know to complete minishell.
+Study this systematically, section by section.
+
+═══════════════════════════════════════════════════════════════════
+TABLE OF CONTENTS
+═══════════════════════════════════════════════════════════════════
+
+PART 1: THEORETICAL FOUNDATIONS
+  1.1  What is a Shell?
+  1.2  How Shells Work (High-Level Overview)
+  1.3  Key Concepts You Must Understand
+
+PART 2: SYSTEM CALLS & FUNCTIONS (The Building Blocks)
+  2.1  Process Management
+  2.2  File Descriptors & I/O
+  2.3  Pipes
+  2.4  Signals
+  2.5  File Operations
+  2.6  Readline Library
+
+PART 3: PARSING (PARTNER A)
+  3.1  Lexical Analysis (Tokenization)
+  3.2  Parsing Strategies
+  3.3  Quote Handling
+  3.4  Environment Variable Expansion
+  3.5  Syntax Validation
+
+PART 4: EXECUTION (PARTNER B)
+  4.1  Command Execution Basics
+  4.2  Pipelines
+  4.3  Redirections
+  4.4  Signal Handling
+  4.5  PATH Resolution
+
+PART 5: BUILTINS
+  5.1  What are Builtins?
+  5.2  Implementation Guide for Each Builtin
+
+PART 6: COMMON PITFALLS & DEBUGGING
+  6.1  Memory Leaks
+  6.2  File Descriptor Leaks
+  6.3  Zombie Processes
+  6.4  Common Bugs
+
+PART 7: TESTING STRATEGY
+  7.1  What to Test
+  7.2  Test Cases
+  7.3  Comparison with Bash
+
+PART 8: IMPLEMENTATION ROADMAP
+  8.1  Week-by-Week Plan
+  8.2  Integration Strategy
+
+═══════════════════════════════════════════════════════════════════
+PART 1: THEORETICAL FOUNDATIONS
+═══════════════════════════════════════════════════════════════════
+
+1.1 WHAT IS A SHELL?
+─────────────────────────────────────────────────────────────────
+
+A shell is a command-line interpreter that:
+  • Reads user input
+  • Interprets the input (parsing)
+  • Executes commands
+  • Displays output
+  • Repeats (REPL: Read-Eval-Print Loop)
+
+Think of it as a translator between you and the operating system.
+
+Examples of shells: bash, zsh, sh, fish, tcsh
+
+1.2 HOW SHELLS WORK (HIGH-LEVEL)
+─────────────────────────────────────────────────────────────────
+
+Step 1: Display Prompt
+   minishell$ _
+
+Step 2: Read Input
+   minishell$ echo hello | grep h > output.txt
+
+Step 3: Tokenize (Lexer)
+   ["echo"] ["hello"] ["|"] ["grep"] ["h"] [">"] ["output.txt"]
+
+Step 4: Parse (Parser)
+   Command 1: echo hello
+   Command 2: grep h (redirected to output.txt)
+   Connection: Pipe
+
+Step 5: Execute
+   • Fork process for "echo hello"
+   • Fork process for "grep h"
+   • Connect them with pipe
+   • Set up redirection
+   • Wait for completion
+
+Step 6: Return to Step 1
+
+1.3 KEY CONCEPTS YOU MUST UNDERSTAND
+─────────────────────────────────────────────────────────────────
+
+A. PROCESSES
+   • Every command runs in its own process
+   • Parent process (shell) creates child processes (commands)
+   • Child processes are independent copies
+
+B. FILE DESCRIPTORS
+   • 0 = stdin (standard input)
+   • 1 = stdout (standard output)
+   • 2 = stderr (standard error)
+   • Think of them as "channels" for data flow
+
+C. PIPES
+   • Connect stdout of one command to stdin of another
+   • Data flows through the pipe like water through a pipe
+
+D. REDIRECTIONS
+   • Change where input comes from or output goes to
+   • < : Read from file instead of keyboard
+   • > : Write to file instead of screen
+   • >> : Append to file
+   • << : Read until delimiter (heredoc)
+
+E. ENVIRONMENT VARIABLES
+   • Key-value pairs stored by the shell
+   • Examples: PATH, HOME, USER
+   • Accessed with $VAR_NAME
+
+═══════════════════════════════════════════════════════════════════
+PART 2: SYSTEM CALLS & FUNCTIONS
+═══════════════════════════════════════════════════════════════════
+
+2.1 PROCESS MANAGEMENT
+─────────────────────────────────────────────────────────────────
+
+fork()
+------
+Creates a copy of the current process.
+
+Return values:
+  • Parent process gets: child's PID (positive number)
+  • Child process gets: 0
+  • Error: -1
+
+Example:
+   pid_t pid = fork();
+   if (pid == 0)
+       printf("I'm the child!\n");  // Child code
+   else if (pid > 0)
+       printf("I'm the parent!\n");  // Parent code
+   else
+       perror("fork failed");
+
+When to use: Every time you need to run a command.
+
+Common mistake: Not checking if fork() failed.
+
+
+execve()
+--------
+Replaces the current process with a new program.
+
+Prototype:
+   int execve(const char *path, char *const argv[], char *const envp[]);
+
+Parameters:
+  • path: Full path to executable ("/bin/ls")
+  • argv: NULL-terminated array of arguments
+  • envp: NULL-terminated array of environment variables
+
+Example:
+   char *argv[] = {"ls", "-la", NULL};
+   char *envp[] = {"PATH=/bin:/usr/bin", NULL};
+   execve("/bin/ls", argv, envp);
+   // If execve succeeds, this line never executes!
+   perror("execve failed");
+
+When to use: After fork(), in the child process.
+
+Important: execve() only returns if it fails!
+
+
+wait() / waitpid()
+------------------
+Parent waits for child process to finish.
+
+Prototype:
+   pid_t wait(int *status);
+   pid_t waitpid(pid_t pid, int *status, int options);
+
+Example:
+   int status;
+   pid_t pid = fork();
+   if (pid == 0) {
+       // Child: execute command
+       execve("/bin/ls", argv, envp);
+       exit(1);
+   } else {
+       // Parent: wait for child
+       waitpid(pid, &status, 0);
+       if (WIFEXITED(status))
+           printf("Exit status: %d\n", WEXITSTATUS(status));
+   }
+
+When to use: After fork(), in the parent process.
+
+Macros for status:
+  • WIFEXITED(status): Did child exit normally?
+  • WEXITSTATUS(status): Get exit code (0-255)
+  • WIFSIGNALED(status): Was child killed by signal?
+
+
+exit()
+------
+Terminates the current process.
+
+Prototype:
+   void exit(int status);
+
+Example:
+   if (error)
+       exit(1);  // Exit with error
+   exit(0);      // Exit successfully
+
+When to use:
+  • In child process after execve() fails
+  • To exit shell (builtin exit command)
+
+2.2 FILE DESCRIPTORS & I/O
+─────────────────────────────────────────────────────────────────
+
+open()
+------
+Opens a file and returns a file descriptor.
+
+Prototype:
+   int open(const char *path, int flags, mode_t mode);
+
+Flags:
+  • O_RDONLY: Read only
+  • O_WRONLY: Write only
+  • O_RDWR: Read and write
+  • O_CREAT: Create if doesn't exist
+  • O_TRUNC: Truncate to 0 length
+  • O_APPEND: Append to end
+
+Example:
+   int fd = open("file.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+   if (fd == -1)
+       perror("open");
+
+When to use: For file redirections (>, >>, <)
+
+
+close()
+-------
+Closes a file descriptor.
+
+Prototype:
+   int close(int fd);
+
+Example:
+   close(fd);
+
+When to use: After you're done with a file descriptor.
+
+IMPORTANT: Always close file descriptors! Leaking FDs will
+eventually make your shell unable to open new files.
+
+
+dup() / dup2()
+--------------
+Duplicates file descriptors.
+
+Prototypes:
+   int dup(int oldfd);              // Returns new FD
+   int dup2(int oldfd, int newfd);  // Uses specific FD
+
+Example (redirect stdout to file):
+   int fd = open("output.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+   int stdout_backup = dup(STDOUT_FILENO);  // Save stdout
+   dup2(fd, STDOUT_FILENO);                 // Redirect stdout to file
+   printf("This goes to file!\n");
+   dup2(stdout_backup, STDOUT_FILENO);      // Restore stdout
+   close(fd);
+   close(stdout_backup);
+
+When to use:
+  • Redirections (>, >>, <)
+  • Saving/restoring stdin/stdout
+
+
+read() / write()
+----------------
+Read from or write to a file descriptor.
+
+Prototypes:
+   ssize_t read(int fd, void *buf, size_t count);
+   ssize_t write(int fd, const void *buf, size_t count);
+
+Example (heredoc):
+   char buffer[1024];
+   ssize_t bytes_read = read(STDIN_FILENO, buffer, 1024);
+   if (bytes_read > 0)
+       write(STDOUT_FILENO, buffer, bytes_read);
+
+When to use: Heredoc (<<), or when you need manual I/O
+
+2.3 PIPES
+─────────────────────────────────────────────────────────────────
+
+pipe()
+------
+Creates a pipe for inter-process communication.
+
+Prototype:
+   int pipe(int pipefd[2]);
+
+Returns:
+  • pipefd[0]: Read end of pipe
+  • pipefd[1]: Write end of pipe
+
+Example (echo hello | grep h):
+   int pipefd[2];
+   pipe(pipefd);
+   
+   if (fork() == 0) {
+       // Child 1: echo hello
+       close(pipefd[0]);              // Close read end
+       dup2(pipefd[1], STDOUT_FILENO); // Redirect stdout to pipe
+       close(pipefd[1]);
+       execve("/bin/echo", ...);
+   }
+   
+   if (fork() == 0) {
+       // Child 2: grep h
+       close(pipefd[1]);              // Close write end
+       dup2(pipefd[0], STDIN_FILENO);  // Redirect stdin from pipe
+       close(pipefd[0]);
+       execve("/bin/grep", ...);
+   }
+   
+   // Parent
+   close(pipefd[0]);
+   close(pipefd[1]);
+   wait(NULL);
+   wait(NULL);
+
+Critical rules for pipes:
+  1. Close unused ends in each process
+  2. Close all pipe FDs in parent after forking
+  3. A pipe needs both a reader and a writer
+
+Common mistake: Forgetting to close pipe FDs → deadlock!
+
+2.4 SIGNALS
+─────────────────────────────────────────────────────────────────
+
+signal() / sigaction()
+----------------------
+Register a function to handle signals.
+
+Prototype:
+   void (*signal(int sig, void (*handler)(int)))(int);
+   int sigaction(int sig, const struct sigaction *act, ...);
+
+Common signals:
+  • SIGINT (Ctrl-C): Interrupt
+  • SIGQUIT (Ctrl-\): Quit
+  • SIGTERM: Termination request
+
+Example:
+   void handle_sigint(int sig)
+   {
+       write(1, "\n", 1);  // Don't use printf in signal handlers!
+       rl_on_new_line();
+       rl_replace_line("", 0);
+       rl_redisplay();
+   }
+   
+   signal(SIGINT, handle_sigint);
+   // or better:
+   struct sigaction sa;
+   sa.sa_handler = handle_sigint;
+   sa.sa_flags = SA_RESTART;
+   sigemptyset(&sa.sa_mask);
+   sigaction(SIGINT, &sa, NULL);
+
+When to use: Set up at shell startup.
+
+Important:
+  • Use write(), NOT printf() in signal handlers
+  • Be careful with global variables
+  • Only one global variable allowed for signals!
+
+
+kill()
+------
+Sends a signal to a process.
+
+Prototype:
+   int kill(pid_t pid, int sig);
+
+Example:
+   kill(child_pid, SIGTERM);  // Ask child to terminate
+
+When to use: Rarely in minishell (bash does this for job control)
+
+2.5 FILE OPERATIONS
+─────────────────────────────────────────────────────────────────
+
+access()
+--------
+Checks if a file exists and has permissions.
+
+Prototype:
+   int access(const char *path, int mode);
+
+Modes:
+  • F_OK: File exists
+  • R_OK: Readable
+  • W_OK: Writable
+  • X_OK: Executable
+
+Example:
+   if (access("/bin/ls", X_OK) == 0)
+       printf("ls is executable\n");
+
+When to use: Finding executables in PATH
+
+
+stat() / lstat() / fstat()
+---------------------------
+Gets file information.
+
+Prototype:
+   int stat(const char *path, struct stat *buf);
+
+Example:
+   struct stat st;
+   if (stat("file.txt", &st) == 0) {
+       if (S_ISDIR(st.st_mode))
+           printf("It's a directory\n");
+       if (st.st_mode & S_IXUSR)
+           printf("Executable by owner\n");
+   }
+
+When to use: Checking if something is a file or directory
+
+
+getcwd() / chdir()
+------------------
+Get/change current working directory.
+
+Prototypes:
+   char *getcwd(char *buf, size_t size);
+   int chdir(const char *path);
+
+Example (pwd builtin):
+   char cwd[1024];
+   if (getcwd(cwd, sizeof(cwd)) != NULL)
+       printf("%s\n", cwd);
+
+Example (cd builtin):
+   if (chdir("/home/user") == -1)
+       perror("cd");
+
+When to use: pwd and cd builtins
+
+
+opendir() / readdir() / closedir()
+-----------------------------------
+Read directory contents.
+
+Prototypes:
+   DIR *opendir(const char *name);
+   struct dirent *readdir(DIR *dirp);
+   int closedir(DIR *dirp);
+
+Example (bonus: wildcards):
+   DIR *dir = opendir(".");
+   struct dirent *entry;
+   while ((entry = readdir(dir)) != NULL)
+       printf("%s\n", entry->d_name);
+   closedir(dir);
+
+When to use: Wildcard expansion (*) in bonus
+
+2.6 READLINE LIBRARY
+─────────────────────────────────────────────────────────────────
+
+readline()
+----------
+Reads a line from the terminal with editing capabilities.
+
+Prototype:
+   char *readline(const char *prompt);
+
+Example:
+   char *input = readline("minishell$ ");
+   if (!input)  // Ctrl-D pressed
+       exit(0);
+   if (*input)  // Non-empty line
+       add_history(input);
+   // ... process input ...
+   free(input);
+
+When to use: Main loop to read user input
+
+Important:
+  • Returns NULL on EOF (Ctrl-D)
+  • Returns malloc'd string (must free!)
+  • Has known memory leaks (not your fault!)
+
+
+add_history()
+-------------
+Adds a line to the command history.
+
+Prototype:
+   void add_history(const char *line);
+
+Example:
+   char *input = readline("minishell$ ");
+   if (input && *input)
+       add_history(input);
+
+When to use: After readline(), before processing
+
+
+rl_clear_history()
+------------------
+Clears the command history.
+
+When to use: On shell exit (optional)
+
+
+rl_on_new_line() / rl_replace_line() / rl_redisplay()
+------------------------------------------------------
+Manipulate readline display (for signal handling).
+
+Example (in signal handler):
+   void handle_sigint(int sig)
+   {
+       write(1, "\n", 1);
+       rl_on_new_line();
+       rl_replace_line("", 0);
+       rl_redisplay();
+   }
+
+When to use: Signal handlers to refresh prompt
+
+═══════════════════════════════════════════════════════════════════
+PART 3: PARSING (PARTNER A)
+═══════════════════════════════════════════════════════════════════
+
+3.1 LEXICAL ANALYSIS (TOKENIZATION)
+─────────────────────────────────────────────────────────────────
+
+Goal: Break input string into tokens.
+
+Input:  echo "hello world" | grep h > file.txt
+Output: [WORD:"echo"] [WORD:"hello world"] [PIPE:"|"] 
+        [WORD:"grep"] [WORD:"h"] [REDIR_OUT:">"] [WORD:"file.txt"]
+
+Algorithm:
+   1. Skip whitespace
+   2. Check for metacharacters (|, <, >, <<, >>)
+   3. Handle quotes (keep them for now)
+   4. Extract word
+   5. Create token
+   6. Repeat until end of string
+
+Key challenges:
+  • Quotes: "hello world" is ONE token, not two
+  • Metacharacters: | < > must be separate tokens
+  • Multiple spaces: Should be ignored
+  • Edge cases: Empty string, only spaces
+
+Pseudocode:
+   t_token *lexer(char *input)
+   {
+       t_token *head = NULL;
+       int i = 0;
+       
+       while (input[i])
+       {
+           // Skip whitespace
+           while (is_whitespace(input[i]))
+               i++;
+           
+           // Check for pipe
+           if (input[i] == '|')
+           {
+               add_token(&head, TOKEN_PIPE, "|");
+               i++;
+           }
+           // Check for redirections
+           else if (input[i] == '<')
+           {
+               if (input[i + 1] == '<')
+               {
+                   add_token(&head, TOKEN_HEREDOC, "<<");
+                   i += 2;
+               }
+               else
+               {
+                   add_token(&head, TOKEN_REDIR_IN, "<");
+                   i++;
+               }
+           }
+           else if (input[i] == '>')
+           {
+               if (input[i + 1] == '>')
+               {
+                   add_token(&head, TOKEN_REDIR_APPEND, ">>");
+                   i += 2;
+               }
+               else
+               {
+                   add_token(&head, TOKEN_REDIR_OUT, ">");
+                   i++;
+               }
+           }
+           // Extract word (handle quotes)
+           else if (input[i])
+           {
+               int start = i;
+               while (input[i] && !is_whitespace(input[i]) 
+                      && !is_metachar(input[i]))
+               {
+                   if (input[i] == '"' || input[i] == '\'')
+                       i = skip_quoted_section(input, i);
+                   else
+                       i++;
+               }
+               char *word = ft_substr(input, start, i - start);
+               add_token(&head, TOKEN_WORD, word);
+               free(word);
+           }
+       }
+       return (head);
+   }
+
+Tips:
+  • Use a linked list for tokens
+  • Keep track of position in string
+  • Don't remove quotes yet (do that in a separate step)
+  • Test each case individually
+
+3.2 PARSING STRATEGIES
+─────────────────────────────────────────────────────────────────
+
+Goal: Convert tokens into command structures.
+
+Input:  [WORD:"echo"] [WORD:"hello"] [PIPE:"|"] [WORD:"grep"] 
+        [WORD:"h"] [REDIR_OUT:">"] [WORD:"file.txt"]
+
+Output: Command 1: args=["echo", "hello", NULL], redirs=NULL
+        Command 2: args=["grep", "h", NULL], 
+                   redirs=[REDIR_OUT:"file.txt"]
+
+Algorithm:
+   1. Split tokens by pipes
+   2. For each group of tokens:
+      a. Extract command and arguments
+      b. Extract redirections
+      c. Create t_cmd structure
+   3. Link commands in a pipeline
+
+Pseudocode:
+   t_cmd *parser(t_token *tokens)
+   {
+       t_cmd *head = NULL;
+       t_token *current = tokens;
+       
+       while (current)
+       {
+           t_cmd *cmd = create_cmd();
+           
+           // Process tokens until pipe or end
+           while (current && current->type != TOKEN_PIPE)
+           {
+               if (is_redir_token(current->type))
+               {
+                   // Next token is the filename
+                   t_redir *redir = create_redir(current->type, 
+                                                   current->next->value);
+                   add_redir_to_cmd(cmd, redir);
+                   current = current->next->next;  // Skip both tokens
+               }
+               else
+               {
+                   // It's an argument
+                   add_arg_to_cmd(cmd, current->value);
+                   current = current->next;
+               }
+           }
+           
+           // Add command to list
+           add_cmd_to_list(&head, cmd);
+           
+           // Skip pipe token
+           if (current && current->type == TOKEN_PIPE)
+               current = current->next;
+       }
+       
+       return (head);
+   }
+
+Tips:
+  • Handle redirections before pipes
+  • A command can have multiple redirections
+  • args array must be NULL-terminated
+  • Don't forget to free token list after parsing
+
+3.3 QUOTE HANDLING
+─────────────────────────────────────────────────────────────────
+
+Goal: Remove quotes and handle their semantics.
+
+Rules:
+  • Single quotes ('): No expansion, remove quotes
+  • Double quotes ("): Allow $VAR expansion, remove quotes
+  • Backslash (\): Not required for minishell
+
+Examples:
+   "hello world"   → hello world
+   'hello world'   → hello world
+   "hello $USER"   → hello john    (expand)
+   'hello $USER'   → hello $USER   (no expand)
+   "$USER"'s home' → john's home
+
+Algorithm:
+   1. Identify quoted sections
+   2. Process content based on quote type
+   3. Remove quotes
+   4. Concatenate result
+
+Pseudocode:
+   char *handle_quotes(char *str)
+   {
+       char *result = ft_strdup("");
+       int i = 0;
+       
+       while (str[i])
+       {
+           if (str[i] == '\'')
+           {
+               // Single quote: no expansion
+               i++;  // Skip opening quote
+               int start = i;
+               while (str[i] && str[i] != '\'')
+                   i++;
+               char *section = ft_substr(str, start, i - start);
+               result = ft_strjoin_free(result, section);
+               if (str[i] == '\'')
+                   i++;  // Skip closing quote
+           }
+           else if (str[i] == '"')
+           {
+               // Double quote: allow expansion
+               i++;  // Skip opening quote
+               int start = i;
+               while (str[i] && str[i] != '"')
+                   i++;
+               char *section = ft_substr(str, start, i - start);
+               section = expand_vars(section);  // Expand $VAR
+               result = ft_strjoin_free(result, section);
+               if (str[i] == '"')
+                   i++;  // Skip closing quote
+           }
+           else
+           {
+               // Regular character
+               char c[2] = {str[i], '\0'};
+               result = ft_strjoin_free(result, c);
+               i++;
+           }
+       }
+       
+       return (result);
+   }
+
+Edge cases to handle:
+  • Unclosed quotes: echo "hello
+  • Nested quotes: echo "hello 'world'"
+  • Empty quotes: echo ""
+  • Adjacent quotes: echo "hello"'world'
+
+3.4 ENVIRONMENT VARIABLE EXPANSION
+─────────────────────────────────────────────────────────────────
+
+Goal: Replace $VAR with its value.
+
+Examples:
+   $USER           → john
+   $HOME/file.txt  → /home/john/file.txt
+   $?              → 0 (exit status)
+   $               → $ (no valid var name)
+   $123            → (empty, not valid)
+
+Algorithm:
+   1. Find $ character
+   2. Extract variable name (letters, digits, underscore)
+   3. Look up value in environment
+   4. Replace $VAR with value
+   5. Continue
+
+Pseudocode:
+   char *expand_vars(char *str, t_shell *shell)
+   {
+       char *result = ft_strdup("");
+       int i = 0;
+       
+       while (str[i])
+       {
+           if (str[i] == '$')
+           {
+               i++;  // Skip $
+               
+               // Special case: $?
+               if (str[i] == '?')
+               {
+                   char *status = ft_itoa(shell->exit_status);
+                   result = ft_strjoin_free(result, status);
+                   i++;
+                   continue;
+               }
+               
+               // Extract variable name
+               int start = i;
+               while (str[i] && (ft_isalnum(str[i]) || str[i] == '_'))
+                   i++;
+               
+               if (i > start)  // Valid variable name
+               {
+                   char *var_name = ft_substr(str, start, i - start);
+                   char *value = env_get(var_name, shell->env);
+                   if (value)
+                       result = ft_strjoin_free(result, value);
+                   free(var_name);
+               }
+               else  // Just a $
+               {
+                   result = ft_strjoin_free(result, "$");
+               }
+           }
+           else
+           {
+               char c[2] = {str[i], '\0'};
+               result = ft_strjoin_free(result, c);
+               i++;
+           }
+       }
+       
+       return (result);
+   }
+
+Important:
+  • Only expand in double quotes or unquoted
+  • Don't expand in single quotes
+  • $? is the exit status of last command
+  • Handle empty/invalid variable names
+
+3.5 SYNTAX VALIDATION
+─────────────────────────────────────────────────────────────────
+
+Goal: Check for syntax errors before execution.
+
+Common errors:
+  • Pipe at start: | echo hello
+  • Pipe at end: echo hello |
+  • Consecutive pipes: echo hello || grep h
+  • Redirection without file: echo hello >
+  • Unclosed quotes: echo "hello
+
+Checks to implement:
+   1. No pipe at start or end
+   2. No consecutive pipes
+   3. Every redirection has a filename
+   4. All quotes are closed
+   5. No empty commands between pipes
+
+Pseudocode:
+   int check_syntax(t_token *tokens)
+   {
+       t_token *curr = tokens;
+       
+       // Check if starts with pipe
+       if (curr && curr->type == TOKEN_PIPE)
+           return (syntax_error("|"));
+       
+       while (curr)
+       {
+           // Check for consecutive pipes
+           if (curr->type == TOKEN_PIPE)
+           {
+               if (!curr->next || curr->next->type == TOKEN_PIPE)
+                   return (syntax_error("|"));
+           }
+           
+           // Check redirections have filename
+           if (is_redir_token(curr->type))
+           {
+               if (!curr->next || curr->next->type != TOKEN_WORD)
+                   return (syntax_error("newline"));
+           }
+           
+           curr = curr->next;
+       }
+       
+       return (1);  // Valid syntax
+   }
+
+Tips:
+  • Check syntax BEFORE parsing
+  • Print error message like bash
+  • Return appropriate error code
+
+═══════════════════════════════════════════════════════════════════
+PART 4: EXECUTION (PARTNER B)
+═══════════════════════════════════════════════════════════════════
+
+4.1 COMMAND EXECUTION BASICS
+─────────────────────────────────────────────────────────────────
+
+Goal: Execute a single command without pipes.
+
+Example: ls -la
+
+Steps:
+   1. Check if builtin
+   2. If builtin, execute in parent process
+   3. If external, fork and execve
+   4. Wait for child
+   5. Get exit status
+
+Pseudocode:
+   int execute_single_cmd(t_cmd *cmd, t_shell *shell)
+   {
+       // Check if builtin
+       if (is_builtin(cmd->args[0]))
+           return (execute_builtin(cmd, shell));
+       
+       // External command
+       pid_t pid = fork();
+       if (pid == -1)
+           return (error_exit("fork"));
+       
+       if (pid == 0)
+       {
+           // Child process
+           
+           // Handle redirections
+           if (handle_redirections(cmd->redirs) == -1)
+               exit(1);
+           
+           // Find executable
+           char *path = find_executable(cmd->args[0], shell->env);
+           if (!path)
+           {
+               error_msg(cmd->args[0], "command not found");
+               exit(127);
+           }
+           
+           // Execute
+           execve(path, cmd->args, shell->envp);
+           
+           // If we get here, execve failed
+           perror("execve");
+           exit(1);
+       }
+       else
+       {
+           // Parent process
+           int status;
+           waitpid(pid, &status, 0);
+           
+           if (WIFEXITED(status))
+               return (WEXITSTATUS(status));
+           return (1);
+       }
+   }
+
+Key points:
+  • Builtins run in parent (they modify shell state)
+  • External commands run in child
+  • Always check fork() return value
+  • execve() only returns on error
+  • Use waitpid() to get exit status
+
+4.2 PIPELINES
+─────────────────────────────────────────────────────────────────
+
+Goal: Execute multiple commands connected by pipes.
+
+Example: cat file.txt | grep hello | wc -l
+
+Visual:
+   ┌─────┐     ┌──────┐     ┌────┐
+   │ cat │ --> │ grep │ --> │ wc │
+   └─────┘     └──────┘     └────┘
+      |           |            |
+    pipe1       pipe2       stdout
+
+Steps:
+   1. Count pipes (n commands need n-1 pipes)
+   2. Create all pipes
+   3. Fork n processes
+   4. Set up pipe connections for each process
+   5. Close all pipes in parent
+   6. Wait for all children
+
+Detailed Algorithm:
+   For cmd1 | cmd2 | cmd3:
+   
+   1. Create 2 pipes:
+      pipe1[2] = {pipe1_read, pipe1_write}
+      pipe2[2] = {pipe2_read, pipe2_write}
+   
+   2. Fork child 1 (cmd1):
+      • Close stdin (don't need it)
+      • dup2(pipe1_write, STDOUT) - send output to pipe1
+      • Close ALL pipe FDs
+      • execve cmd1
+   
+   3. Fork child 2 (cmd2):
+      • dup2(pipe1_read, STDIN) - read from pipe1
+      • dup2(pipe2_write, STDOUT) - send output to pipe2
+      • Close ALL pipe FDs
+      • execve cmd2
+   
+   4. Fork child 3 (cmd3):
+      • dup2(pipe2_read, STDIN) - read from pipe2
+      • Close stdout (use terminal)
+      • Close ALL pipe FDs
+      • execve cmd3
+   
+   5. Parent:
+      • Close ALL pipe FDs
+      • Wait for all 3 children
+      • Get exit status of last command
+
+Pseudocode:
+   int execute_pipeline(t_cmd *cmd, t_shell *shell)
+   {
+       int num_cmds = count_commands(cmd);
+       int num_pipes = num_cmds - 1;
+       int **pipes = create_pipes(num_pipes);
+       int i = 0;
+       t_cmd *curr = cmd;
+       
+       while (curr)
+       {
+           pid_t pid = fork();
+           if (pid == 0)
+           {
+               // Child process
+               
+               // Input: from previous pipe (if not first)
+               if (i > 0)
+                   dup2(pipes[i - 1][0], STDIN_FILENO);
+               
+               // Output: to next pipe (if not last)
+               if (i < num_pipes)
+                   dup2(pipes[i][1], STDOUT_FILENO);
+               
+               // Close ALL pipe FDs
+               close_all_pipes(pipes, num_pipes);
+               
+               // Execute command
+               execve(path, curr->args, shell->envp);
+               exit(1);
+           }
+           
+           i++;
+           curr = curr->next;
+       }
+       
+       // Parent: close all pipes and wait
+       close_all_pipes(pipes, num_pipes);
+       
+       int status;
+       for (int j = 0; j < num_cmds; j++)
+           waitpid(-1, &status, 0);  // Wait for any child
+       
+       free_pipes(pipes, num_pipes);
+       
+       if (WIFEXITED(status))
+           return (WEXITSTATUS(status));
+       return (1);
+   }
+
+CRITICAL PIPE RULES:
+   1. ALWAYS close unused pipe ends in each process
+   2. Parent MUST close ALL pipe FDs after forking
+   3. Forgetting to close pipes = DEADLOCK
+   4. Each process needs exactly 2 FDs (stdin, stdout)
+
+Common mistakes:
+   • Not closing pipes in parent → processes hang
+   • Not closing pipes in children → FD leak
+   • Wrong pipe connections → commands don't communicate
+   • Waiting in wrong order → deadlock
+
+4.3 REDIRECTIONS
+─────────────────────────────────────────────────────────────────
+
+Goal: Change where input/output comes from/goes to.
+
+Types:
+   <  : Input from file
+   >  : Output to file (truncate)
+   >> : Output to file (append)
+   << : Input until delimiter (heredoc)
+
+Implementation:
+   1. Open file with appropriate flags
+   2. Use dup2() to redirect FD
+   3. Close original FD
+
+Input Redirection (<):
+   int fd = open("input.txt", O_RDONLY);
+   if (fd == -1)
+   {
+       perror("input.txt");
+       return (-1);
+   }
+   dup2(fd, STDIN_FILENO);
+   close(fd);
+
+Output Redirection (>):
+   int fd = open("output.txt", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+   if (fd == -1)
+   {
+       perror("output.txt");
+       return (-1);
+   }
+   dup2(fd, STDOUT_FILENO);
+   close(fd);
+
+Append (>>):
+   int fd = open("output.txt", O_WRONLY | O_CREAT | O_APPEND, 0644);
+   dup2(fd, STDOUT_FILENO);
+   close(fd);
+
+Heredoc (<<):
+   1. Create temporary file or pipe
+   2. Read lines from stdin until delimiter
+   3. Write to temp file
+   4. Redirect stdin from temp file
+   5. Delete temp file (or close pipe)
+
+Pseudocode for heredoc:
+   int handle_heredoc(char *delimiter)
+   {
+       int pipefd[2];
+       pipe(pipefd);
+       
+       char *line;
+       while (1)
+       {
+           line = readline("> ");
+           if (!line || ft_strcmp(line, delimiter) == 0)
+           {
+               free(line);
+               break;
+           }
+           write(pipefd[1], line, ft_strlen(line));
+           write(pipefd[1], "\n", 1);
+           free(line);
+       }
+       
+       close(pipefd[1]);
+       dup2(pipefd[0], STDIN_FILENO);
+       close(pipefd[0]);
+       
+       return (0);
+   }
+
+Important:
+   • Check for file permissions
+   • Handle multiple redirections (last one wins)
+   • Backup and restore stdin/stdout in parent
+   • Error messages should match bash
+
+4.4 SIGNAL HANDLING
+─────────────────────────────────────────────────────────────────
+
+Goal: Handle Ctrl-C, Ctrl-D, and Ctrl-\ correctly.
+
+Required behavior:
+   • Ctrl-C (SIGINT): Display new prompt
+   • Ctrl-D (EOF): Exit shell
+   • Ctrl-\ (SIGQUIT): Do nothing
+
+In interactive mode:
+   minishell$ <Ctrl-C>
+   minishell$ _
+
+In execution mode:
+   minishell$ sleep 100
+   <Ctrl-C>              ← Interrupt sleep, return to prompt
+   minishell$ _
+
+Implementation:
+   // Global variable (only one allowed!)
+   int g_signal = 0;
+   
+   void handle_sigint(int sig)
+   {
+       g_signal = sig;
+       write(1, "\n", 1);
+       rl_on_new_line();
+       rl_replace_line("", 0);
+       rl_redisplay();
+   }
+   
+   void setup_signals(void)
+   {
+       struct sigaction sa_int;
+       struct sigaction sa_quit;
+       
+       // SIGINT (Ctrl-C)
+       sa_int.sa_handler = handle_sigint;
+       sa_int.sa_flags = SA_RESTART;
+       sigemptyset(&sa_int.sa_mask);
+       sigaction(SIGINT, &sa_int, NULL);
+       
+       // SIGQUIT (Ctrl-\) - ignore
+       sa_quit.sa_handler = SIG_IGN;
+       sigemptyset(&sa_quit.sa_mask);
+       sigaction(SIGQUIT, &sa_quit, NULL);
+   }
+
+Different behavior during execution:
+   void setup_execution_signals(void)
+   {
+       signal(SIGINT, SIG_IGN);   // Ignore in parent
+       signal(SIGQUIT, SIG_IGN);  // Ignore in parent
+   }
+   
+   // In child process, restore default:
+   signal(SIGINT, SIG_DFL);
+   signal(SIGQUIT, SIG_DFL);
+
+Important:
+   • Only use write() in signal handlers (not printf!)
+   • Restore default signals in child processes
+   • Don't print extra newlines
+
+4.5 PATH RESOLUTION
+─────────────────────────────────────────────────────────────────
+
+Goal: Find executable files in PATH.
+
+Example:
+   Command: ls
+   PATH: /usr/bin:/bin:/usr/local/bin
+   
+   Search in:
+     1. /usr/bin/ls  ← Found! Use this.
+     2. /bin/ls
+     3. /usr/local/bin/ls
+
+Special cases:
+   • Absolute path: /bin/ls → Use directly
+   • Relative path: ./script → Use directly
+   • No PATH: Use current directory only
+
+Algorithm:
+   char *find_executable(char *cmd, t_env *env)
+   {
+       // Absolute or relative path
+       if (cmd[0] == '/' || cmd[0] == '.')
+       {
+           if (access(cmd, X_OK) == 0)
+               return (ft_strdup(cmd));
+           return (NULL);
+       }
+       
+       // Search in PATH
+       char *path_value = env_get("PATH", env);
+       if (!path_value)
+           return (NULL);
+       
+       char **dirs = ft_split(path_value, ':');
+       int i = 0;
+       while (dirs[i])
+       {
+           char *full_path = join_path(dirs[i], cmd);
+           if (access(full_path, X_OK) == 0)
+           {
+               free_array(dirs);
+               return (full_path);
+           }
+           free(full_path);
+           i++;
+       }
+       
+       free_array(dirs);
+       return (NULL);
+   }
+
+Helper function:
+   char *join_path(char *dir, char *cmd)
+   {
+       char *temp = ft_strjoin(dir, "/");
+       char *full = ft_strjoin(temp, cmd);
+       free(temp);
+       return (full);
+   }
+
+Important:
+   • Check if file is executable with access()
+   • Free allocated memory
+   • Handle case where PATH doesn't exist
+   • Return NULL if command not found
+
+═══════════════════════════════════════════════════════════════════
+PART 5: BUILTINS
+═══════════════════════════════════════════════════════════════════
+
+5.1 WHAT ARE BUILTINS?
+─────────────────────────────────────────────────────────────────
+
+Builtins are commands that are executed by the shell itself,
+not as external programs.
+
+Why?
+   • They need to modify shell state
+   • They need access to shell internals
+   • They're more efficient
+
+Examples: cd (changes shell's directory)
+         export (modifies shell's environment)
+         exit (exits the shell)
+
+Key difference:
+   External: fork() → execve() → child exits
+   Builtin:  Call function directly in parent
+
+5.2 IMPLEMENTATION GUIDE FOR EACH BUILTIN
+─────────────────────────────────────────────────────────────────
+
+echo [-n] [args...]
+-------------------
+Prints arguments separated by spaces.
+
+Option:
+   -n: Don't print newline at end
+
+Implementation:
+   int builtin_echo(char **args)
+   {
+       int i = 1;
+       int newline = 1;
+       
+       // Check for -n flag
+       if (args[1] && ft_strcmp(args[1], "-n") == 0)
+       {
+           newline = 0;
+           i = 2;
+       }
+       
+       // Print arguments
+       while (args[i])
+       {
+           printf("%s", args[i]);
+           if (args[i + 1])
+               printf(" ");
+           i++;
+       }
+       
+       if (newline)
+           printf("\n");
+       
+       return (0);
+   }
+
+Edge cases:
+   • Multiple -n flags: echo -n -n hello
+   • -n as argument: echo -n -n
+   • No arguments: echo
+   • Empty string: echo ""
+
+cd [path]
+---------
+Changes current directory.
+
+Special cases:
+   • No argument: cd → go to HOME
+   • - : cd - → go to previous directory (OLDPWD)
+   • ~: cd ~ → go to HOME
+   • Absolute path: cd /usr/bin
+   • Relative path: cd ../src
+
+Implementation:
+   int builtin_cd(char **args, t_shell *shell)
+   {
+       char *path;
+       char cwd[1024];
+       
+       // Get current directory (for OLDPWD)
+       if (getcwd(cwd, sizeof(cwd)) == NULL)
+           return (1);
+       
+       // Determine target directory
+       if (!args[1] || ft_strcmp(args[1], "~") == 0)
+           path = env_get("HOME", shell->env);
+       else if (ft_strcmp(args[1], "-") == 0)
+           path = env_get("OLDPWD", shell->env);
+       else
+           path = args[1];
+       
+       if (!path)
+       {
+           error_msg("cd", "HOME not set");
+           return (1);
+       }
+       
+       // Change directory
+       if (chdir(path) == -1)
+       {
+           perror("cd");
+           return (1);
+       }
+       
+       // Update PWD and OLDPWD
+       env_set("OLDPWD", cwd, &shell->env);
+       if (getcwd(cwd, sizeof(cwd)) != NULL)
+           env_set("PWD", cwd, &shell->env);
+       
+       return (0);
+   }
+
+Edge cases:
+   • Too many arguments: cd dir1 dir2
+   • Permission denied: cd /root
+   • Directory doesn't exist: cd nonexistent
+
+pwd
+---
+Prints current working directory.
+
+Implementation:
+   int builtin_pwd(void)
+   {
+       char cwd[1024];
+       
+       if (getcwd(cwd, sizeof(cwd)) == NULL)
+       {
+           perror("pwd");
+           return (1);
+       }
+       
+       printf("%s\n", cwd);
+       return (0);
+   }
+
+Simple! No options required.
+
+export [VAR=value ...]
+----------------------
+Sets environment variables.
+
+With no arguments: Prints all variables
+With arguments: Sets variables
+
+Implementation:
+   int builtin_export(char **args, t_shell *shell)
+   {
+       // No arguments: print all
+       if (!args[1])
+       {
+           print_export_list(shell->env);
+           return (0);
+       }
+       
+       // Set variables
+       int i = 1;
+       while (args[i])
+       {
+           // Find '='
+           char *eq = ft_strchr(args[i], '=');
+           if (!eq)
+           {
+               // No '=': just declare (bash behavior)
+               i++;
+               continue;
+           }
+           
+           // Split into key and value
+           *eq = '\0';
+           char *key = args[i];
+           char *value = eq + 1;
+           
+           // Validate key
+           if (!is_valid_identifier(key))
+           {
+               error_msg("export", "not a valid identifier");
+               return (1);
+           }
+           
+           // Set in environment
+           env_set(key, value, &shell->env);
+           
+           i++;
+       }
+       
+       // Update envp array for execve
+       free_array(shell->envp);
+       shell->envp = env_to_array(shell->env);
+       
+       return (0);
+   }
+
+Helper: Check if valid identifier
+   int is_valid_identifier(char *str)
+   {
+       if (!str || !str[0])
+           return (0);
+       if (!ft_isalpha(str[0]) && str[0] != '_')
+           return (0);
+       int i = 1;
+       while (str[i])
+       {
+           if (!ft_isalnum(str[i]) && str[i] != '_')
+               return (0);
+           i++;
+       }
+       return (1);
+   }
+
+Edge cases:
+   • Invalid names: export 123=value, export -x=value
+   • Empty value: export VAR=
+   • Multiple variables: export A=1 B=2 C=3
+
+unset [VAR ...]
+---------------
+Removes environment variables.
+
+Implementation:
+   int builtin_unset(char **args, t_shell *shell)
+   {
+       if (!args[1])
+           return (0);
+       
+       int i = 1;
+       while (args[i])
+       {
+           // Validate variable name
+           if (!is_valid_identifier(args[i]))
+           {
+               error_msg("unset", "not a valid identifier");
+               return (1);
+           }
+           
+           // Remove from environment
+           env_unset(args[i], &shell->env);
+           
+           i++;
+       }
+       
+       // Update envp array
+       free_array(shell->envp);
+       shell->envp = env_to_array(shell->env);
+       
+       return (0);
+   }
+
+Edge cases:
+   • Variable doesn't exist: unset NONEXISTENT (no error)
+   • Invalid name: unset 123 (error)
+   • Multiple variables: unset VAR1 VAR2 VAR3
+
+env
+---
+Prints all environment variables.
+
+Implementation:
+   int builtin_env(t_shell *shell)
+   {
+       t_env *curr = shell->env;
+       
+       while (curr)
+       {
+           printf("%s=%s\n", curr->key, curr->value);
+           curr = curr->next;
+       }
+       
+       return (0);
+   }
+
+No options or arguments required.
+
+exit [n]
+--------
+Exits the shell.
+
+With no argument: Exit with last status
+With argument: Exit with that status
+
+Implementation:
+   int builtin_exit(char **args, t_shell *shell)
+   {
+       printf("exit\n");
+       
+       // No argument
+       if (!args[1])
+           exit(shell->exit_status);
+       
+       // Too many arguments
+       if (args[2])
+       {
+           error_msg("exit", "too many arguments");
+           return (1);
+       }
+       
+       // Check if numeric
+       if (!is_numeric(args[1]))
+       {
+           error_msg("exit", "numeric argument required");
+           exit(2);
+       }
+       
+       // Convert and exit
+       int status = ft_atoi(args[1]);
+       exit(status & 255);  // Bash uses only lower 8 bits
+   }
+
+Helper: Check if numeric
+   int is_numeric(char *str)
+   {
+       int i = 0;
+       if (str[0] == '-' || str[0] == '+')
+           i++;
+       if (!str[i])
+           return (0);
+       while (str[i])
+       {
+           if (!ft_isdigit(str[i]))
+               return (0);
+           i++;
+       }
+       return (1);
+   }
+
+Edge cases:
+   • Non-numeric: exit hello (error, exit with 2)
+   • Overflow: exit 999999999999 (use modulo 256)
+   • Negative: exit -1 (valid, becomes 255)
+
+═══════════════════════════════════════════════════════════════════
+PART 6: COMMON PITFALLS & DEBUGGING
+═══════════════════════════════════════════════════════════════════
+
+6.1 MEMORY LEAKS
+─────────────────────────────────────────────────────────────────
+
+Common sources:
+   • Not freeing readline() return value
+   • Not freeing tokens after parsing
+   • Not freeing commands after execution
+   • Not freeing environment on exit
+   • Not freeing split arrays
+
+How to find:
+   valgrind --leak-check=full --track-origins=yes ./minishell
+
+Tips:
+   • Free in reverse order of allocation
+   • Set pointers to NULL after freeing
+   • Use ft_calloc() for structures
+   • Create cleanup functions for each structure
+
+Example cleanup:
+   void free_tokens(t_token *tokens)
+   {
+       t_token *curr = tokens;
+       t_token *next;
+       
+       while (curr)
+       {
+           next = curr->next;
+           free(curr->value);
+           free(curr);
+           curr = next;
+       }
+   }
+
+6.2 FILE DESCRIPTOR LEAKS
+─────────────────────────────────────────────────────────────────
+
+Symptoms:
+   • Shell becomes unable to open files
+   • Error: "Too many open files"
+   • Pipes stop working
+
+Common causes:
+   • Not closing pipes in all processes
+   • Not closing redirected files
+   • Not restoring stdin/stdout
+
+How to check:
+   ls -la /proc/$(pgrep minishell)/fd
+
+Each process can have max ~1024 FDs open.
+
+Prevention:
+   • Always close() after dup2()
+   • Close all pipe FDs in parent
+   • Close unused pipe ends in children
+   • Keep track of opened FDs
+
+Example:
+   int fd = open("file.txt", O_RDONLY);
+   dup2(fd, STDIN_FILENO);
+   close(fd);  // ← Don't forget this!
+
+6.3 ZOMBIE PROCESSES
+─────────────────────────────────────────────────────────────────
+
+What is a zombie?
+   A child process that has finished but hasn't been reaped
+   by its parent (wait() not called).
+
+How to check:
+   ps aux | grep minishell
+   # Look for <defunct> processes
+
+Symptoms:
+   • Accumulating processes in process table
+   • "Resource temporarily unavailable" errors
+
+Prevention:
+   • Always call wait() or waitpid()
+   • Wait for ALL children
+   • Don't ignore SIGCHLD
+
+Example:
+   pid_t pid = fork();
+   if (pid == 0)
+       exit(0);
+   else
+       waitpid(pid, NULL, 0);  // ← Must do this!
+
+6.4 COMMON BUGS
+─────────────────────────────────────────────────────────────────
+
+Bug: Shell hangs on pipe commands
+Cause: Not closing pipe FDs
+Fix: Close ALL pipe FDs in parent and children
+
+Bug: Command not found even though it exists
+Cause: PATH not set or incorrect
+Fix: Check env_get("PATH", env)
+
+Bug: Redirection doesn't work
+Cause: dup2() called with wrong FDs or not called at all
+Fix: Verify FDs are correct: dup2(fd, STDIN_FILENO)
+
+Bug: Ctrl-C doesn't work
+Cause: Signal handler not set up or set up incorrectly
+Fix: Use sigaction(), not signal()
+
+Bug: Environment variables not expanding
+Cause: Expanding in single quotes or not calling expand_vars()
+Fix: Only expand in double quotes or unquoted
+
+Bug: Quotes not removed
+Cause: Not calling handle_quotes() or doing it incorrectly
+Fix: Remove quotes in parsing phase
+
+Bug: Exit status wrong
+Cause: Not using WEXITSTATUS() macro or not updating shell->exit_status
+Fix: Use waitpid() with status and update after each command
+
+Bug: Memory still reachable
+Cause: Not freeing on exit
+Fix: Create cleanup function called before exit
+
+═══════════════════════════════════════════════════════════════════
+PART 7: TESTING STRATEGY
+═══════════════════════════════════════════════════════════════════
+
+7.1 WHAT TO TEST
+─────────────────────────────────────────────────────────────────
+
+Categories:
+   1. Basic commands
+   2. Pipes
+   3. Redirections
+   4. Quotes
+   5. Environment variables
+   6. Builtins
+   7. Signals
+   8. Edge cases
+   9. Error handling
+
+Testing approach:
+   1. Test each feature individually
+   2. Test combinations
+   3. Compare with bash
+   4. Test edge cases
+   5. Test error cases
+
+7.2 TEST CASES
+─────────────────────────────────────────────────────────────────
+
+BASIC COMMANDS:
+   /bin/ls
+   ls -la
+   echo hello world
+   cat /etc/passwd
+   pwd
+   ./script.sh
+
+PIPES:
+   echo hello | cat
+   ls | grep minishell
+   cat file.txt | grep hello | wc -l
+   echo hello | cat | cat | cat
+
+REDIRECTIONS:
+   echo hello > output.txt
+   cat < input.txt
+   echo hello >> output.txt
+   cat << EOF
+   hello
+   world
+   EOF
+
+QUOTES:
+   echo "hello world"
+   echo 'hello world'
+   echo "hello $USER"
+   echo 'hello $USER'
+   echo "$USER"'s home'
+
+ENVIRONMENT VARIABLES:
+   echo $USER
+   echo $HOME
+   echo $PATH
+   echo $?
+   export VAR=value
+   echo $VAR
+   unset VAR
+   echo $VAR
+
+BUILTINS:
+   echo hello
+   echo -n hello
+   cd /tmp
+   pwd
+   cd ..
+   pwd
+   cd
+   pwd
+   export VAR=value
+   env | grep VAR
+   unset VAR
+   exit
+   exit 42
+
+SIGNALS:
+   (type command then press Ctrl-C)
+   sleep 10  <Ctrl-C>
+   cat  <Ctrl-D>
+   cat  <Ctrl-\>
+
+EDGE CASES:
+   (empty command)
+   
+   (only spaces)
+        
+   | echo hello
+   echo hello |
+   echo hello ||
+   echo hello >
+   echo "unclosed
+   echo ''
+   echo ""
+   cd nonexistent
+   /bin/nonexistent
+   $NONEXISTENT
+
+ERROR HANDLING:
+   cat /root/secret  (permission denied)
+   cd /nonexistent   (no such file)
+   export 123=value  (invalid identifier)
+   exit hello        (numeric argument required)
+
+7.3 COMPARISON WITH BASH
+─────────────────────────────────────────────────────────────────
+
+Always compare your minishell with bash:
+
+Method 1: Side-by-side
+   Terminal 1: bash
+   Terminal 2: ./minishell
+   
+   Type same command in both and compare output.
+
+Method 2: Script
+   #!/bin/bash
+   
+   CMD="echo hello | grep h"
+   
+   echo "Bash:"
+   bash -c "$CMD"
+   echo "Exit: $?"
+   
+   echo "Minishell:"
+   ./minishell -c "$CMD"
+   echo "Exit: $?"
+
+Method 3: Exit status
+   bash -c "ls /nonexistent" ; echo $?
+   ./minishell -c "ls /nonexistent" ; echo $?
+   # Should both print 2
+
+What to compare:
+   • Output text
+   • Exit status ($?)
+   • Error messages
+   • Behavior on signals
+   • Handling of edge cases
+
+═══════════════════════════════════════════════════════════════════
+PART 8: IMPLEMENTATION ROADMAP
+═══════════════════════════════════════════════════════════════════
+
+8.1 WEEK-BY-WEEK PLAN
+─────────────────────────────────────────────────────────────────
+
+WEEK 1: Foundation & Setup
+---------------------------
+Day 1-2: Setup & Planning
+   ✓ Set up directory structure
+   ✓ Define data structures (minishell.h)
+   ✓ Create Makefile
+   ✓ Read documentation together
+   ✓ Plan division of work
+
+Day 3-4: Basic Shell Loop
+   ✓ Implement main loop
+   ✓ Integrate readline
+   ✓ Handle Ctrl-D
+   ✓ Print prompt
+   ✓ Test: Shell starts and exits cleanly
+
+Day 5-7: Basic Parsing & Execution
+   Partner A: Basic lexer (just words, spaces)
+   Partner B: Execute single command (no pipes/redir)
+   
+   Goal: Execute simple commands like "/bin/ls"
+
+WEEK 2: Core Features
+----------------------
+Day 1-3: Enhanced Parsing
+   Partner A:
+   ✓ Add pipe tokenization
+   ✓ Add redirection tokenization
+   ✓ Build parser (create t_cmd structures)
+   
+   Test: Parse "echo hello | grep h > file"
+
+Day 4-5: Pipes
+   Partner B:
+   ✓ Implement pipe creation
+   ✓ Connect commands with pipes
+   ✓ Handle multiple pipes
+   
+   Test: "ls | grep minishell", "cat | cat | cat"
+
+Day 6-7: Redirections
+   Partner B:
+   ✓ Implement <, >, >>
+   ✓ Handle file opening/closing
+   
+   Test: "echo hello > file", "cat < file"
+
+WEEK 3: Advanced Parsing & Builtins
+------------------------------------
+Day 1-2: Quote Handling
+   Partner A:
+   ✓ Remove quotes
+   ✓ Handle single vs double quotes
+   ✓ Test with environment variables
+   
+   Test: echo "hello world", echo 'hello $USER'
+
+Day 3-4: Environment Variable Expansion
+   Partner A:
+   ✓ Expand $VAR
+   ✓ Handle $?
+   ✓ Don't expand in single quotes
+   
+   Test: echo $USER, echo $?
+
+Day 5-7: Builtins
+   Both partners:
+   ✓ echo (Partner A)
+   ✓ cd (Partner B)
+   ✓ pwd (Partner B)
+   ✓ export (Partner A)
+   ✓ unset (Partner A)
+   ✓ env (Partner A)
+   ✓ exit (Partner B)
+   
+   Test each builtin individually
+
+WEEK 4: Integration & Polish
+-----------------------------
+Day 1-2: Signal Handling
+   Partner B:
+   ✓ Handle Ctrl-C
+   ✓ Handle Ctrl-D (already done)
+   ✓ Handle Ctrl-\ (do nothing)
+   
+   Test: Ctrl-C during sleep, cat, etc.
+
+Day 3-4: PATH Resolution
+   Partner B:
+   ✓ Split PATH by ':'
+   ✓ Search for executables
+   ✓ Handle absolute/relative paths
+   
+   Test: ls (without /bin/), ./script
+
+Day 5: Heredoc
+   Partner B:
+   ✓ Read until delimiter
+   ✓ Redirect to stdin
+   
+   Test: cat << EOF
+
+Day 6-7: Integration Testing
+   Both:
+   ✓ Test all features together
+   ✓ Compare with bash extensively
+   ✓ Fix integration bugs
+
+WEEK 5: Debugging & Final Testing
+----------------------------------
+Day 1-3: Memory & FD Management
+   ✓ Fix all memory leaks (valgrind)
+   ✓ Fix FD leaks (ls /proc/.../fd)
+   ✓ Fix zombie processes (ps aux)
+
+Day 4-5: Edge Cases
+   ✓ Test error handling
+   ✓ Test empty/invalid input
+   ✓ Test long commands
+   ✓ Test syntax errors
+
+Day 6-7: Final Polish
+   ✓ Norm check
+   ✓ Code review
+   ✓ Documentation
+   ✓ Final testing
+
+BONUS (Week 6, only if mandatory is perfect):
+----------------------------------------------
+   • && and || operators
+   • Parentheses for priority
+   • Wildcards (*)
+
+8.2 INTEGRATION STRATEGY
+─────────────────────────────────────────────────────────────────
+
+Step 1: Define Interface (Week 1)
+   Both partners agree on:
+   • Data structure definitions
+   • Function prototypes
+   • Return values and error codes
+
+Step 2: Develop Independently (Week 2-3)
+   Partner A: Parsing module
+   Partner B: Execution module
+   
+   Meet every 2-3 days to sync progress.
+
+Step 3: Integration Points
+   Week 2, Day 7:
+   • Partner A provides: t_cmd *parser(t_token *tokens)
+   • Partner B tests with: execute_commands(t_cmd *cmd, ...)
+   
+   Week 3, Day 4:
+   • Test quote handling + expansion together
+   • Test builtins
+   
+   Week 4:
+   • Full integration
+   • Joint debugging
+
+Step 4: Testing Together (Week 4-5)
+   • Create shared test suite
+   • Test each other's code
+   • Fix bugs together
+
+Tips for Integration:
+   • Communicate frequently
+   • Use git branches
+   • Test individually before merging
+   • Don't break each other's code
+   • Help each other debug
+
+═══════════════════════════════════════════════════════════════════
+FINAL TIPS & RESOURCES
+═══════════════════════════════════════════════════════════════════
+
+TIPS FOR SUCCESS:
+─────────────────────────────────────────────────────────────────
+1. Start simple, add complexity gradually
+2. Test frequently (after every feature)
+3. Compare with bash constantly
+4. Use valgrind from day 1
+5. Don't skip error handling
+6. Read man pages (man fork, man pipe, etc.)
+7. Use gdb for debugging
+8. Keep code clean and readable
+9. Comment your code
+10. Don't wait until the end to integrate
+
+RECOMMENDED READING:
+─────────────────────────────────────────────────────────────────
+Man pages:
+   man bash
+   man fork
+   man execve
+   man pipe
+   man dup2
+   man waitpid
+   man signal
+   man readline
+
+Online resources:
+   • Writing Your Own Shell (tutorial)
+   • Unix System Calls documentation
+   • GNU Readline documentation
+
+DEBUGGING TOOLS:
+─────────────────────────────────────────────────────────────────
+valgrind --leak-check=full ./minishell
+gdb ./minishell
+strace ./minishell
+ltrace ./minishell
+
+GDB Commands:
+   break main
+   run
+   next / step
+   print variable
+   backtrace
+   continue
+
+COMMON COMMANDS TO TEST:
+─────────────────────────────────────────────────────────────────
+ls -la | grep minishell
+cat /etc/passwd | grep root | wc -l
+echo "Hello $USER" > file.txt
+cat << EOF | grep hello
+export PATH=/bin:/usr/bin
+cd ~ && pwd
+(echo hello; echo world) | cat
+
+═══════════════════════════════════════════════════════════════════
+
+Good luck with your minishell! 🚀
+
+Remember: When in doubt, check how bash does it!
+
+If you get stuck, review this guide systematically.
+Every section builds on the previous one.
+
+You got this! 💪
