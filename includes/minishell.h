@@ -6,7 +6,7 @@
 /*   By: dbinti-m <dbinti-m@student.42kl.edu.my>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/07 18:54:10 by dbinti-m          #+#    #+#             */
-/*   Updated: 2025/12/07 22:21:18 by dbinti-m         ###   ########.fr       */
+/*   Updated: 2025/12/08 01:01:49 by dbinti-m         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -65,25 +65,25 @@ typedef struct s_tok
 
 // REDIRECTIONS
 
-typedef enum e_dir_type
+typedef enum e_redir_type
 {
 	R_IN,
 	R_OUT,
 	R_APP,
 	R_HEREDOC
-}	t_dir_type;
+}	t_redir_type;
 
-typedef struct s_dir
+typedef struct s_redir
 {
-	t_dir_type		type;
+	t_redir_type		type;
 	char			*target;
-	struct s_dir	*next;
-}	t_dir;
+	struct s_redir	*next;
+}	t_redir;
 
 typedef struct s_cmd
 {
 	char	**av;
-	t_dir	*dirs;
+	t_redir	*redirs;
 }	t_cmd;
 
 // ABSTRACT SYNTAX TREE (AST)
@@ -133,5 +133,19 @@ typedef struct s_shell
 	int		*pids;
 	int		pid_count;
 }	t_shell;
+
+// srcs/utils/free.c
+
+void	free_str_arr(char **arr);
+void	free_env(t_env *env);
+
+// srcs/utils/env_utils.c
+
+char	*get_env_value(t_env *env, char *key);
+t_env	*arr_to_env(char **envp);
+
+// srcs/execution/path.c
+
+char *find_in_path(char *cmd, t_env *env);
 
 #endif
