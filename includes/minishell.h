@@ -76,8 +76,8 @@ typedef enum e_redir_type
 typedef struct s_redir
 {
 	t_redir_type		type;
-	char			*target;
-	struct s_redir	*next;
+	char				*target;
+	struct s_redir		*next;
 }	t_redir;
 
 typedef struct s_cmd
@@ -111,7 +111,7 @@ typedef struct s_ast
 		t_cmd		*cmd;
 		t_binary	branch;
 		t_ast		*child;
-	} data;
+	} u_data;
 }	t_ast;
 
 // ENVIRONMENT
@@ -146,6 +146,6 @@ t_env	*arr_to_env(char **envp);
 
 // srcs/execution/path.c
 
-char *find_in_path(char *cmd, t_env *env);
+char	*find_in_path(char *cmd, t_env *env);
 
 #endif
