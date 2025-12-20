@@ -75,26 +75,26 @@ static size_t	av_len(char **av)
 
 bool	av_push(char ***avp, const char *word)
 {
-	char	**av;
+	char	**tmp;
 	size_t	len;
 
 	if (!word)
 		return (false);
-	av = *avp;
-	len = av_len(av);
-	av = (char **)realloc(av, sizeof(char *) * (len + 2));
-	if (!av)
+	len = av_len(*avp);
+	tmp = realloc(*avp, sizeof(*tmp) * (len + 2));
+	if (!tmp)
 	{
 		perror("minishell: realloc");
 		return (false);
 	}
-	av[len] = ft_strdup(word);
-	if (!av[len])
+	tmp[len] = ft_strdup(word);
+	if (!tmp[len])
 	{
 		perror("minishell: strdup");
+		*avp = tmp;
 		return (false);
 	}
-	av[len + 1] = NULL;
-	*avp = av;
+	tmp[len + 1] = NULL;
+	*avp = tmp;
 	return (true);
 }

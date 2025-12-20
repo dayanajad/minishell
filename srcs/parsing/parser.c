@@ -24,7 +24,7 @@ t_ast	*parse_pipe(t_tok **cur)
 	t_tok	*tok;
 	t_ast	*right;
 
-	left = parse_cmd(cur);
+	left = parse_subshell(cur);
 	if (!left)
 		return (NULL);
 	tok = *cur;
@@ -37,7 +37,7 @@ t_ast	*parse_pipe(t_tok **cur)
 			free_ast(left);
 			return (NULL);
 		}
-		right = parse_cmd(cur);
+		right = parse_subshell(cur);
 		if (!right)
 			return (parse_err(left));
 		left = new_ast_bin(A_PIPE, left, right);
@@ -84,7 +84,7 @@ t_ast	*parse_or(t_tok **cur)
 	if (!left)
 		return (NULL);
 	tok = *cur;
-	while (tok && tok->type == TOK_AND)
+	while (tok && tok->type == TOK_OR)
 	{
 		*cur = tok->next;
 		if (is_cmd_end(*cur))

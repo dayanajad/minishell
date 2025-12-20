@@ -1,49 +1,43 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   export.c                                           :+:      :+:    :+:   */
+/*   pwd_env.c                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: dbinti-m <dbinti-m@student.42kl.edu.my>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/12/11 05:27:02 by dbinti-m          #+#    #+#             */
-/*   Updated: 2025/12/11 05:27:03 by dbinti-m         ###   ########.fr       */
+/*   Created: 2025/12/11 05:25:31 by dbinti-m          #+#    #+#             */
+/*   Updated: 2025/12/11 05:25:33 by dbinti-m         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-static int	print_export_env(t_env *env)
+int	builtin_pwd(void)
 {
-	while (env)
+	char	buf[PATH_MAX];
+
+	if (getcwd(buf, sizeof(buf)) == NULL)
 	{
-		ft_putstr_fd("declare -x ", STDOUT_FILENO);
-		ft_putstr_fd(env->key, STDOUT_FILENO);
-		if (env->value)
-		{
-			ft_putstr_fd("=\"", STDOUT_FILENO);
-			ft_putstr_fd(env->value, STDOUT_FILENO);
-			ft_putstr_fd("\"", STDOUT_FILENO);
-		}
-		ft_putstr_fd("\n", STDOUT_FILENO);
-		env = env->next;
+		perror("minishell: pwd");
+		return (1);
 	}
+	ft_putstr_fd(buf, STDOUT_FILENO);
+	ft_putstr_fd("\n", STDOUT_FILENO);
 	return (0);
 }
 
-int	builtin_export(char **av, t_env **env)
+int	builtin_env(t_env *env)
 {
-	int	status;
-	int	i;
-
-	if (!av[1])
-		return (print_export_env(*env));
-	status = 0;
-	i = 1;
-	while (av[i])
+	while (env)
 	{
-		if (export_one_arg(av[i], env))
-			status = 1;
-		i++;
+		if (env->value)
+		{
+			ft_putstr_fd(env->key, STDOUT_FILENO);
+			ft_putstr_fd("=", STDOUT_FILENO);
+			ft_putstr_fd(env->value, STDOUT_FILENO);
+			ft_putstr_fd("\n", STDOUT_FILENO);
+		}
+		env = env->next;
 	}
-	return (status);
+	return (0);
 }

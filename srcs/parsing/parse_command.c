@@ -25,16 +25,14 @@ static int	fill_simple_cmd(t_tok **cur, t_cmd *cmd)
 				return (0);
 			*cur = tok->next;
 		}
-		else if (parse_one_redir(cur, &cmd->redir) == false)
+		else if (parse_one_redir(cur, &cmd->redirs) == false)
 			return (0);
-		else
-			break ;
 		tok = *cur;
 	}
 	return (1);
 }
 
-static int	*parse_simple_cmd(t_tok *cur)
+static t_ast	*parse_simple_cmd(t_tok **cur)
 {
 	t_cmd	*cmd;
 
@@ -64,6 +62,7 @@ t_ast	*parse_subshell(t_tok **cur)
 	if (tok && tok->type == TOK_LPAREN)
 	{
 		*cur = tok->next;
+		child = parse_or(cur);
 		if (!child)
 			return (NULL);
 		tok = *cur;
@@ -77,14 +76,4 @@ t_ast	*parse_subshell(t_tok **cur)
 		return (new_ast_subshell(child));
 	}
 	return (parse_simple_cmd(cur));
-}
-
-t_ast	*parse_cmd(t_tok **cur)
-{
-	if (!*cur)
-	{
-		syntax_err_tok(*cur);
-		return (NULL);
-	}
-	return (parse_subshell(cur));
 }

@@ -42,7 +42,7 @@ t_ast	*new_ast_cmd(t_cmd *cmd)
 	return (node);
 }
 
-t_ast	*new_ast_binary(t_ast_type type, t_ast *left, t_ast *right)
+t_ast	*new_ast_bin(t_ast_type type, t_ast *left, t_ast *right)
 {
 	t_ast	*node;
 

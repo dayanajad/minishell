@@ -64,16 +64,17 @@ static void	app_env_node(t_env **head, t_env **tail, t_env *new)
 t_env	*arr_to_env(char **envp)
 {
 	t_env	*head;
-	t_env	*current;
+	t_env	*tail;
 	t_env	*node;
 	int		i;
 
 	head = NULL;
-	current = NULL;
+	tail = NULL;
 	i = 0;
 	while (envp[i])
 	{
-		node = create_env_node(envp[i]) if (node)
+		node = create_env_node(envp[i]);
+		if (node)
 			app_env_node(&head, &tail, node);
 		i++;
 	}
