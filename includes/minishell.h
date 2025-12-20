@@ -6,7 +6,7 @@
 /*   By: dbinti-m <dbinti-m@student.42kl.edu.my>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/07 18:54:10 by dbinti-m          #+#    #+#             */
-/*   Updated: 2025/12/08 18:45:20 by dbinti-m         ###   ########.fr       */
+/*   Updated: 2025/12/20 23:36:28 by dbinti-m         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -76,15 +76,9 @@ typedef enum e_redir_type
 
 typedef struct s_redir
 {
-<<<<<<< HEAD
-	t_redir_type	type;
-	char			*target;
-	struct s_redir	*next;
-=======
 	t_redir_type		type;
 	char				*target;
 	struct s_redir		*next;
->>>>>>> bba0be0fc898d2303605c3df3652a53c5f66bfb1
 }	t_redir;
 
 typedef struct s_cmd
@@ -199,7 +193,6 @@ char	**env_to_array(t_env *env);
 // srcs/execution/path.c
 
 char	*find_in_path(char *cmd, t_env *env);
-<<<<<<< HEAD
 
 // srcs/execution/executor.c
 
@@ -270,7 +263,5 @@ int		builtin_unset(char **av, t_env **env);
 // srcs/builtins/exit.c
 
 int		builtin_exit(char **av, t_shell *shell);
-=======
->>>>>>> bba0be0fc898d2303605c3df3652a53c5f66bfb1
 
 #endif
