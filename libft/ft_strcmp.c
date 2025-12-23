@@ -1,34 +1,23 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   main.c                                             :+:      :+:    :+:   */
+/*   ft_strcmp.c                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: dbinti-m <dbinti-m@student.42kl.edu.my>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/12/23 13:00:18 by dbinti-m          #+#    #+#             */
-/*   Updated: 2025/12/23 13:42:58 by dbinti-m         ###   ########.fr       */
+/*   Created: 2025/12/23 19:10:49 by dbinti-m          #+#    #+#             */
+/*   Updated: 2025/12/23 19:12:30 by dbinti-m         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "minishell.h"
+#include "libft.h"
 
-int	main(int ac, char **av, char **envp)
+int	ft_strcmp(const char *s1, const char *s2)
 {
-	t_shell shell;
-	(void)ac;
-	(void)av;
-	(void)envp;
-
-	shell.env = NULL;
-	shell.last_status = 0;
-	shell.should_exit = 0;
-	shell.pids = NULL;
-	shell.pid_count = 0;
-	shell.heredocs = NULL;
-
-	printf("Shell initialized!\n");
-	printf("last_status: %d\n", shell.last_status);
-	printf("should_exit: %d\n", shell.should_exit);
-
-	return(0);
+	while (*s1 && *s2 && *s1 == *s2)
+	{
+		s1++;
+		s2++;
+	}
+	return ((unsigned char)*s1 - (unsigned char)*s2);
 }
