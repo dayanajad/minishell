@@ -6,7 +6,7 @@
 /*   By: dbinti-m <dbinti-m@student.42kl.edu.my>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/07 18:54:10 by dbinti-m          #+#    #+#             */
-/*   Updated: 2025/12/20 23:36:28 by dbinti-m         ###   ########.fr       */
+/*   Updated: 2025/12/23 12:36:34 by dayana           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -180,88 +180,5 @@ t_ast	*new_ast_cmd(t_cmd *cmd);
 t_ast	*new_ast_bin(t_ast_type type, t_ast *left, t_ast *right);
 t_ast	*new_ast_subshell(t_ast	*child);
 t_redir	*new_redir(t_redir_type type, const char *target);
-
-// srcs/utils/env_utils.c
-
-char	*get_env_value(t_env *env, char *key);
-t_env	*arr_to_env(char **envp);
-
-// srcs/utils/env_arr.c
-
-char	**env_to_array(t_env *env);
-
-// srcs/execution/path.c
-
-char	*find_in_path(char *cmd, t_env *env);
-
-// srcs/execution/executor.c
-
-int		exec_ast(t_ast *ast, t_shell *shell);
-
-// srcs/execution/exec_logic.c
-
-int		exec_and_node(t_ast *ast, t_shell *shell);
-int		exec_or_node(t_ast *ast, t_shell *shell);
-int		exec_subshell_node(t_ast *ast, t_shell *shell);
-
-// srcs/execution/redirections.c
-
-int		save_stdio(int saved[2]);
-int		restore_stdio(int saved[2]);
-bool	apply_redirections(t_redir *redirs);
-
-// srcs/execution/pipes.c
-
-int		exec_pipe_node(t_ast *node, t_shell *shell);
-
-// srcs/execution/heredoc.c
-
-bool	process_heredocs(t_ast *ast, t_shell *shell);
-
-// srcs/execution/heredoc_utils.c
-
-int		heredoc_create_file(t_redir *redir, int index, t_shell *shell);
-void	cleanup_heredoc_files(t_shell *shell);
-
-// srcs/execution/signal.c
-
-void	set_parent_signals(void);
-void	set_child_signals(void);
-void	set_heredoc_signals(void);
-void	disable_ctrl_c_echo(void);
-
-// srcs/builtins/builtin_utils.c
-
-bool	is_builtin(const char *name);
-int		exec_builtin(t_cmd *cmd, t_shell *shell);
-
-// srcs/builtins/echo.c
-
-int		builtin_echo(char **av);
-
-// srcs/builtins/cd.c
-
-int		builtin_cd(char **av, t_shell *shell);
-
-// srcs/builtins/pwd_env.c
-
-int		builtin_pwd(void);
-int		builtin_env(t_env *env);
-
-// srcs/builtins/export.c
-
-int		builtin_export(char **av, t_env **env);
-
-// srcs/builtins/export_utils.c
-
-int		export_one_arg(char *arg, t_env **env);
-
-// srcs/builtins/unset.c
-
-int		builtin_unset(char **av, t_env **env);
-
-// srcs/builtins/exit.c
-
-int		builtin_exit(char **av, t_shell *shell);
 
 #endif
