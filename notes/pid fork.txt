@@ -1,0 +1,27 @@
+pid = fork();
+```
+
+**After fork(), TWO processes exist:**
+
+### Child Process:
+- **Real PID**: 12346 (the actual process ID in the system)
+- **Variable `pid`**: 0 (what fork returned to the child)
+
+### Parent Process:
+- **Real PID**: 12345 (unchanged)
+- **Variable `pid`**: 12346 (the child's real PID)
+
+---
+
+## Visual:
+```
+BEFORE FORK:
+Parent process (PID: 12345)
+    |
+    | fork()
+    v
+
+AFTER FORK:
+Parent process (PID: 12345)          Child process (PID: 12346)
+pid = 12346 ←─────────────────────→  pid = 0
+"I know child's PID"                 "I know I'm the child"

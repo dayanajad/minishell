@@ -1,0 +1,192 @@
+
+
+## Step-by-step walkthrough:
+
+### **STEP 1: Initial state**
+```
+fd 0 (stdin)  → keyboard
+fd 1 (stdout) → screen  
+fd 2 (stderr) → screen
+```
+
+---
+
+### **STEP 2: Save stdin with dup()**
+```c
+saved[0] = dup(STDIN_FILENO);  // dup(0)
+```
+
+**What happens:**
+- System creates a NEW fd (finds lowest available = 3)
+- Makes fd 3 point to the SAME place as fd 0
+- Returns 3
+- `saved[0]` now contains the value 3
+
+```
+fd 0 (stdin)  → keyboard
+fd 1 (stdout) → screen
+fd 2 (stderr) → screen
+fd 3          → keyboard  ← NEW! Backup of stdin
+```
+
+---
+
+### **STEP 3: Open file.txt**
+```c
+fd = open("file.txt", O_RDONLY);  
+```
+
+**What happens:**
+- System opens file.txt
+- Finds lowest available fd number = 4
+- Returns 4
+- `fd` variable now contains the value 4
+
+```
+fd 0 (stdin)  → keyboard
+fd 1 (stdout) → screen
+fd 2 (stderr) → screen
+fd 3          → keyboard  ← Still the backup
+fd 4          → file.txt  ← NEW! The opened file
+```
+
+---
+
+### **STEP 4: Redirect stdin to file.txt**
+```c
+dup2(fd, STDIN_FILENO);  // dup2(4, 0)
+```
+
+**What happens:**
+- Closes fd 0 (keyboard)
+- Makes fd 0 point to the SAME place as fd 4 (file.txt)
+- fd 4 still exists!
+
+```
+fd 0 (stdin)  → file.txt  ← CHANGED! Now reads from file
+fd 1 (stdout) → screen
+fd 2 (stderr) → screen
+fd 3          → keyboard  ← Still the backup!
+fd 4          → file.txt  ← Still open
+```
+
+**Now both fd 0 AND fd 4 point to file.txt!**
+
+---
+
+### **STEP 5: Close fd 4 (we don't need it anymore)**
+```c
+close(fd);  // close(4)
+```
+
+```
+fd 0 (stdin)  → file.txt  ← Still points to file
+fd 1 (stdout) → screen
+fd 2 (stderr) → screen
+fd 3          → keyboard  ← Still the backup!
+```
+
+**Now only fd 0 points to file.txt, fd 4 is closed.**
+
+---
+
+### **STEP 6: Restore stdin from backup**
+```c
+dup2(saved[0], STDIN_FILENO);  // dup2(3, 0)
+```
+
+**What happens:**
+- Closes fd 0 (file.txt)
+- Makes fd 0 point to the SAME place as fd 3 (keyboard)
+
+```
+fd 0 (stdin)  → keyboard  ← RESTORED!
+fd 1 (stdout) → screen
+fd 2 (stderr) → screen
+fd 3          → keyboard  ← Backup still exists
+```
+
+---
+
+### **STEP 7: Close the backup**
+```c
+close(saved[0]);  // close(3)
+```
+
+```
+fd 0 (stdin)  → keyboard
+fd 1 (stdout) → screen
+fd 2 (stderr) → screen
+```
+
+**Back to normal!**
+
+---
+
+## Key points:
+
+1. **fd 3 is the BACKUP** - it always points to the original stdin (keyboard)
+2. **fd 4 is the FILE** - it points to file.txt
+3. **After dup2(4, 0)**, BOTH fd 0 and fd 4 point to file.txt
+4. **We close fd 4** because we don't need it (fd 0 is enough)
+5. **fd 3 never changed** - it's our backup to restore later!
+
+---
+
+**Does this clear it up?** fd 3 stays pointing to keyboard the whole time - that's why it's a backup!
+
+why in save_stdio we only close saved[1] but in restore stdio we close both
+
+**EXCELLENT catch!** Let me clarify - you're misreading the code:
+
+---
+
+## In save_stdio():
+
+```c
+saved[1] = dup(STDOUT_FILENO);
+if (saved[1] < 0)
+{
+    perror("minishell: dup");
+    close(saved[0]);    // ← This closes saved[0], not saved[1]!
+    return (-1);
+}
+```
+
+**What's happening:**
+- We try to save stdout to `saved[1]`
+- If it FAILS, we close `saved[0]` (which we successfully saved earlier)
+- We DON'T close `saved[1]` because it's -1 (invalid)!
+
+**Why close saved[0]?** Because we already successfully created it, and now we're aborting, so we need to clean up!
+
+---
+
+## In restore_stdio():
+
+```c
+close(saved[0]);  // Close stdin backup
+close(saved[1]);  // Close stdout backup
+```
+
+**What's happening:**
+- We successfully restored both
+- Now we close BOTH backups because we're done with them
+
+---
+
+## Summary:
+
+**save_stdio():**
+- If saving stdout FAILS → close only saved[0] (cleanup after partial success)
+- If BOTH succeed → don't close anything (we need them for later!)
+
+**restore_stdio():**
+- After restoring stdin → close saved[0] (done with backup)
+- After restoring stdout → close saved[1] (done with backup)
+
+---
+
+**Does this make sense?** We only close in save_stdio() if there's an ERROR and we need to clean up!
+
+**Have you written restore_stdio() yet?**

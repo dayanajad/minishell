@@ -1,34 +1,37 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   main.c                                             :+:      :+:    :+:   */
+/*   echo.c                                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: dbinti-m <dbinti-m@student.42kl.edu.my>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/12/23 13:00:18 by dbinti-m          #+#    #+#             */
-/*   Updated: 2025/12/23 13:42:58 by dbinti-m         ###   ########.fr       */
+/*   Created: 2025/12/23 23:35:33 by dbinti-m          #+#    #+#             */
+/*   Updated: 2025/12/23 23:38:43 by dbinti-m         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-int	main(int ac, char **av, char **envp)
+int	builtin_echo(char **av)
 {
-	t_shell shell;
-	(void)ac;
-	(void)av;
-	(void)envp;
+	int	i;
+	int	newline;
 
-	shell.env = NULL;
-	shell.last_status = 0;
-	shell.should_exit = 0;
-	shell.pids = NULL;
-	shell.pid_count = 0;
-	shell.heredocs = NULL;
-
-	printf("Shell initialized!\n");
-	printf("last_status: %d\n", shell.last_status);
-	printf("should_exit: %d\n", shell.should_exit);
-
-	return(0);
+	newline = 1;
+	i = 1;
+	if (av[i] && ft_strcmp(av[i], "-n") == 0)
+	{
+		newline = 0;
+		i++;
+	}
+	while (av[i])
+	{
+		ft_putstr_fd(av[i], STDOUT_FILENO);
+		if (av[i + 1])
+			ft_putchar_fd(' ', STDOUT_FILENO);
+		i++;
+	}
+	if (newline)
+		ft_putchar_fd('\n', STDOUT_FILENO);
+	return (0);
 }
