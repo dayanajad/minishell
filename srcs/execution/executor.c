@@ -6,9 +6,11 @@
 /*   By: dbinti-m <dbinti-m@student.42kl.edu.my>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/23 17:31:28 by dbinti-m          #+#    #+#             */
-/*   Updated: 2025/12/24 00:07:01 by dbinti-m         ###   ########.fr       */
+/*   Updated: 2026/01/07 00:11:43 by dbinti-m         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
+#include "minishell.h"
 
 static int	handle_redir_only(t_cmd *cmd)
 {
@@ -27,8 +29,8 @@ static int	handle_redir_only(t_cmd *cmd)
 
 static int	exec_builtin_with_redir(t_cmd *cmd, t_shell *shell)
 {
-	int	saved[2];
-	int	ret;
+	int saved[2];
+	int ret;
 
 	if (save_stdio(saved) < 0)
 		return (1);
@@ -60,20 +62,20 @@ int	exec_ast(t_ast *ast, t_shell *shell)
 {
 	int	status;
 
+	status = 0;
 	if (!ast || !shell)
 		return (0);
 	if (ast->type == A_CMD)
 		status = exec_cmd_node(ast, shell);
-	else if (ast->type == A_PIPE)
+/*	else if (ast->type == A_PIPE)
 		status = exec_pipe_node(ast, shell);
 	else if (ast->type == A_AND)
 		status = exec_and_node(ast, shell);
 	else if (ast->type == A_OR)
 		status = exec_or_node(ast, shell);
 	else if (ast->type == A_SUBSHELL)
-		status = exec_subshell_node(ast, shell);
-	else
-		status = 0;
+		status = exec_subshell_node(ast, shell);*/
 	shell->last_status = status;
 	return (status);
 }
+	

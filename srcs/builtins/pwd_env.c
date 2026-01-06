@@ -6,7 +6,7 @@
 /*   By: dbinti-m <dbinti-m@student.42kl.edu.my>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/23 23:38:57 by dbinti-m          #+#    #+#             */
-/*   Updated: 2025/12/23 23:57:11 by dbinti-m         ###   ########.fr       */
+/*   Updated: 2026/01/07 00:02:52 by dbinti-m         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,7 +28,7 @@ int	builtin_pwd(void)
 
 int	builtin_env(t_env *env)
 {
-	t_env	*cur;
+	t_env *cur;
 
 	cur = env;
 	while (cur)

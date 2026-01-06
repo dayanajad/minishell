@@ -6,7 +6,7 @@
 /*   By: dbinti-m <dbinti-m@student.42kl.edu.my>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/07 18:54:10 by dbinti-m          #+#    #+#             */
-/*   Updated: 2025/12/24 00:06:13 by dbinti-m         ###   ########.fr       */
+/*   Updated: 2026/01/06 23:59:07 by dbinti-m         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -152,6 +152,18 @@ void	free_redirs(t_redir *redirs);
 void	free_cmd(t_cmd *cmd);
 void	free_ast(t_ast *ast);
 
+// srcs/utils/env_utils.c
+
+char    *get_env_value(t_env *env, char *key);
+
+// srcs/utils/arr_env.c
+
+t_env	*arr_to_env(char **envp);
+
+// srcs/utils/env_arr.c
+
+char	**env_to_arr(t_env *env);
+
 // srcs/parsing/parser.c
 
 t_ast	*parse(t_tok *tokens);
@@ -192,6 +204,16 @@ int		save_stdio(int saved[2]);
 int		restore_stdio(int saved[2]);
 bool	apply_redirections(t_redir *redirs);
 
+// srcs/execution/path.c
+
+char 	*find_in_path(char *cmd, t_env *env);
+
+// srcs/execution/exec_utils.c
+
+int		normalize_status(int status);
+void	exec_external_child(t_cmd *cmd, t_shell *shell);
+int		exec_external_cmd(t_cmd *cmd, t_shell *shell);
+
 // srcs/builtins/builtin_utils.c
 
 bool	is_builtin(const char *name);
@@ -221,5 +243,6 @@ int		builtin_unset(char **av, t_env **env);
 // srcs/builtins/exit.c
 
 int		builtin_exit(char **av, t_shell *shell);
+
 
 #endif

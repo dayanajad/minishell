@@ -1,37 +1,24 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   echo.c                                             :+:      :+:    :+:   */
+/*   env_utils.c                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: dbinti-m <dbinti-m@student.42kl.edu.my>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/12/23 23:35:33 by dbinti-m          #+#    #+#             */
-/*   Updated: 2026/01/07 00:06:32 by dbinti-m         ###   ########.fr       */
+/*   Created: 2026/01/06 18:43:59 by dbinti-m          #+#    #+#             */
+/*   Updated: 2026/01/06 18:45:50 by dbinti-m         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-int	builtin_echo(char **av)
+char	*get_env_value(t_env *env, char *key)
 {
-	int	i;
-	int	nl;
-
-	nl = 1;
-	i = 1;
-	if (av[i] && ft_strcmp(av[i], "-n") == 0)
+	while (env)
 	{
-		nl = 0;
-		i++;
+		if (ft_strcmp(env->key, key) == 0)
+			return (env->value);
+		env = env->next;
 	}
-	while (av[i])
-	{
-		ft_putstr_fd(av[i], STDOUT_FILENO);
-		if (av[i + 1])
-			ft_putchar_fd(' ', STDOUT_FILENO);
-		i++;
-	}
-	if (nl)
-		ft_putchar_fd('\n', STDOUT_FILENO);
-	return (0);
+	return (NULL);
 }

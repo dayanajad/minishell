@@ -1,0 +1,5 @@
+WIFEXITED(status)     // True if exited normally
+WEXITSTATUS(status)   // Get exit code (0-255)
+
+WIFSIGNALED(status)   // True if killed by signal
+WTERMSIG(status)      // Get signal number
