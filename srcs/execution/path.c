@@ -6,7 +6,7 @@
 /*   By: dbinti-m <dbinti-m@student.42kl.edu.my>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/06 18:48:44 by dbinti-m          #+#    #+#             */
-/*   Updated: 2026/01/06 23:19:46 by dbinti-m         ###   ########.fr       */
+/*   Updated: 2026/01/07 00:39:53 by dbinti-m         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,8 +14,8 @@
 
 static char	*build_path(char *dir, char *cmd)
 {
-	char *tmp;
-	char *path;
+	char	*tmp;
+	char	*path;
 
 	tmp = ft_strjoin(dir, "/");
 	if (!tmp)
@@ -48,7 +48,7 @@ static char	*search_in_dirs(char **dirs, char *cmd)
 	return (NULL);
 }
 
-char *find_in_path(char *cmd, t_env *env)
+char	*find_in_path(char *cmd, t_env *env)
 {
 	char	*path_env;
 	char	**dirs;

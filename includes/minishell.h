@@ -6,7 +6,7 @@
 /*   By: dbinti-m <dbinti-m@student.42kl.edu.my>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/07 18:54:10 by dbinti-m          #+#    #+#             */
-/*   Updated: 2026/01/06 23:59:07 by dbinti-m         ###   ########.fr       */
+/*   Updated: 2026/01/07 00:37:40 by dbinti-m         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -154,7 +154,7 @@ void	free_ast(t_ast *ast);
 
 // srcs/utils/env_utils.c
 
-char    *get_env_value(t_env *env, char *key);
+char	*get_env_value(t_env *env, char *key);
 
 // srcs/utils/arr_env.c
 
@@ -206,7 +206,7 @@ bool	apply_redirections(t_redir *redirs);
 
 // srcs/execution/path.c
 
-char 	*find_in_path(char *cmd, t_env *env);
+char	*find_in_path(char *cmd, t_env *env);
 
 // srcs/execution/exec_utils.c
 
@@ -243,6 +243,5 @@ int		builtin_unset(char **av, t_env **env);
 // srcs/builtins/exit.c
 
 int		builtin_exit(char **av, t_shell *shell);
-
 
 #endif

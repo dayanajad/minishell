@@ -6,7 +6,7 @@
 /*   By: dbinti-m <dbinti-m@student.42kl.edu.my>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/23 22:06:09 by dbinti-m          #+#    #+#             */
-/*   Updated: 2025/12/23 23:25:39 by dbinti-m         ###   ########.fr       */
+/*   Updated: 2026/01/07 00:40:51 by dbinti-m         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,7 +34,7 @@ int	restore_stdio(int saved[2])
 {
 	if (saved[0] >= 0)
 	{
-		if (dup2(saved[0] , STDIN_FILENO) < 0)
+		if (dup2(saved[0], STDIN_FILENO) < 0)
 		{
 			perror("minishell:dup2");
 			close(saved[0]);
@@ -57,7 +57,7 @@ int	restore_stdio(int saved[2])
 
 static int	open_redir_fd(t_redir *r)
 {
-	int fd;
+	int	fd;
 
 	fd = -1;
 	if (r->type == R_IN)
