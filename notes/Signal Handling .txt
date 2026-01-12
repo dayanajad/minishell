@@ -1,0 +1,306 @@
+## 🚨 Signal Handling - Quick Reference
+
+### **What are signals?**
+Signals are interrupts sent to processes. Common ones:
+- `Ctrl+C` = **SIGINT** (signal number 2) - "Please stop"
+- `Ctrl+\` = **SIGQUIT** (signal number 3) - "Stop NOW + dump core"
+- `Ctrl+D` = **EOF** (not a signal, just end of input)
+
+---
+
+### **Why do we need signal handling in minishell?**
+
+**Without signals:**
+```bash
+minishell$ ^C
+[entire shell dies - you lose everything]
+```
+
+**With signals:**
+```bash
+minishell$ ^C
+minishell$ [shell stays alive, new prompt]
+```
+
+---
+
+### **Two modes of signal handling:**
+
+| Mode | When? | Ctrl+C (SIGINT) | Ctrl+\ (SIGQUIT) |
+|------|-------|-----------------|------------------|
+| **Interactive** | At prompt, waiting for input | Show new prompt (custom handler) | Ignore (do nothing) |
+| **Exec** | Running a command | Kill the command (default) | Kill + "Quit (core dumped)" (default) |
+
+---
+
+### **The Global Variable:**
+
+```c
+volatile sig_atomic_t g_signal = 0;
+```
+
+- **`sig_atomic_t`** = Guarantees atomic read/write (no half-written values)
+- **`volatile`** = Tells compiler "don't optimize, always read from memory"
+- Used to communicate between signal handler and main loop
+
+---
+
+### **The Functions:**
+
+#### 1. `handle_sigint()` - Custom Ctrl+C handler
+```c
+void handle_sigint(int sig)
+{
+    g_signal = SIGINT;              // Mark that Ctrl+C happened
+    write(STDOUT_FILENO, "\n", 1);  // Print newline
+    rl_on_new_line();               // Tell readline: new line
+    rl_replace_line("", 0);         // Clear typed text
+    rl_redisplay();                 // Show prompt again
+}
+```
+
+**What it does:** Makes Ctrl+C show a new prompt instead of killing shell
+
+---
+
+#### 2. `setup_signals_interactive()` - For the prompt
+```c
+void setup_signals_interactive(void)
+{
+    signal(SIGINT, handle_sigint);  // Ctrl+C: use custom handler
+    signal(SIGQUIT, SIG_IGN);       // Ctrl+\: ignore
+}
+```
+
+**When to call:** When shell is waiting for user input
+
+---
+
+#### 3. `setup_signals_exec()` - For running commands
+```c
+void setup_signals_exec(void)
+{
+    signal(SIGINT, SIG_DFL);   // Ctrl+C: default (kill process)
+    signal(SIGQUIT, SIG_DFL);  // Ctrl+\: default (kill + core dump)
+}
+```
+
+**When to call:** Before executing a command (in child process)
+
+---
+
+### **The Flow:**
+
+```c
+// 1. Shell starts
+setup_signals_interactive();
+
+while (1)
+{
+    // 2. At prompt (interactive mode active)
+    input = readline("minishell$ ");
+    
+    if (!input)
+    {
+        if (g_signal == SIGINT)  // Ctrl+C
+        {
+            g_signal = 0;
+            continue;  // New prompt
+        }
+        else  // Ctrl+D (EOF)
+        {
+            break;  // Exit shell
+        }
+    }
+    
+    // 3. Execute command
+    pid = fork();
+    if (pid == 0)  // Child
+    {
+        setup_signals_exec();  // Switch to exec mode
+        // ... execute command
+    }
+    
+    wait();  // Parent waits
+    
+    // 4. Back to prompt
+    setup_signals_interactive();  // Switch back to interactive
+}
+```
+
+---
+
+### **Key Points:**
+
+✅ **At prompt:** Ctrl+C = new prompt (don't kill shell)
+✅ **During command:** Ctrl+C = kill command (shell survives)
+✅ **Two modes:** Interactive (custom) vs Exec (default)
+✅ **Global variable:** `g_signal` tracks what signal occurred
+✅ **readline functions:** `rl_on_new_line()`, `rl_replace_line()`, `rl_redisplay()` = make it pretty
+
+---
+
+### **Common Mistakes to Avoid:**
+
+❌ Don't use `printf()` in signal handlers (not async-safe)
+✅ Use `write()` instead
+
+❌ Don't forget to reset `g_signal = 0` after handling
+✅ Reset it in main loop
+
+❌ Don't keep interactive mode during command execution
+✅ Switch to exec mode before running commands
+
+---
+
+## **Quick Test:**
+
+```bash
+# At prompt - should show new prompt
+minishell$ ^C
+minishell$ 
+
+# During command - should kill command
+minishell$ sleep 100
+^C
+minishell$ 
+
+# Ctrl+\ at prompt - should do nothing
+minishell$ ^\
+minishell$ 
+
+# Ctrl+\ during command - should kill + message
+minishell$ sleep 100
+^\
+Quit (core dumped)
+minishell$
+```
+
+---
+
+Great question! Let me explain **async-safe** (asynchronous-safe)! 🎯
+
+---
+
+## What does "async-safe" mean?
+
+**Async-safe** = Safe to use in signal handlers
+
+**NOT async-safe** = Can cause crashes or weird behavior in signal handlers
+
+---
+
+## Why is this a problem?
+
+### Signal handlers interrupt your program at **ANY TIME**:
+
+```c
+int main()
+{
+    printf("Hello");      // ← Signal arrives HERE!
+    printf(" World\n");
+}
+```
+
+If a signal arrives **while `printf()` is running**, and your signal handler **also calls `printf()`**, bad things happen! 💥
+
+---
+
+## Example of the problem:
+
+```c
+void handle_signal(int sig)
+{
+    printf("Signal caught!\n");  // ❌ DANGER!
+}
+
+int main()
+{
+    signal(SIGINT, handle_signal);
+    
+    printf("This is a very long string...");  // Main program
+    // ↑ If Ctrl+C pressed here, printf is interrupted
+    // ↑ Signal handler calls printf again
+    // ↑ printf's internal state gets corrupted!
+    
+    return 0;
+}
+```
+
+---
+
+## What can go wrong?
+
+`printf()` uses internal buffers and locks. If you interrupt it mid-execution:
+
+1. **Deadlock**: Signal handler tries to lock something main program already locked
+2. **Corruption**: Internal buffers get messed up
+3. **Crash**: Segmentation fault
+
+---
+
+## The Solution: Use async-safe functions!
+
+### ❌ NOT async-safe (don't use in signal handlers):
+```c
+printf()        // Uses buffers, not safe
+malloc()        // Uses locks, not safe
+free()          // Uses locks, not safe
+```
+
+### ✅ Async-safe (safe to use):
+```c
+write()         // Direct system call, safe!
+_exit()         // Safe exit
+getpid()        // Safe
+```
+
+---
+
+## That's why we use `write()` in our signal handler:
+
+```c
+void handle_sigint(int sig)
+{
+    // ❌ DON'T do this:
+    printf("\n");
+    
+    // ✅ DO this instead:
+    write(STDOUT_FILENO, "\n", 1);
+}
+```
+
+`write()` is a **direct system call** - it doesn't use buffers or locks, so it's safe!
+
+---
+
+## Full list of async-safe functions:
+
+You can find the official list in the POSIX standard, but here are the common ones:
+
+**Safe:**
+- `write()`
+- `read()`
+- `_exit()`
+- `signal()`
+- `getpid()`
+- `kill()`
+
+**NOT Safe:**
+- `printf()`, `fprintf()`
+- `malloc()`, `free()`
+- `exit()` (use `_exit()` instead)
+- Most library functions
+
+---
+
+## TL;DR:
+
+**Async-safe** = Won't crash if signal interrupts the program at any moment
+
+**Rule of thumb for signal handlers:**
+- ✅ Set a flag (like `g_signal`)
+- ✅ Use `write()` for output
+- ❌ Don't use `printf()`, `malloc()`, or most library functions
+
+Does this make sense? 😊

@@ -6,7 +6,7 @@
 /*   By: dbinti-m <dbinti-m@student.42kl.edu.my>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/08 18:30:02 by dbinti-m          #+#    #+#             */
-/*   Updated: 2025/12/08 18:30:05 by dbinti-m         ###   ########.fr       */
+/*   Updated: 2026/01/12 22:09:14 by dbinti-m         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,6 +47,35 @@ static bool	add_redir_target(t_tok **cur, t_redir_type type, t_redir **redirs)
 	return (true);
 }
 
+static bool	handle_heredoc_redir(t_tok **cur, t_redir **redirs)
+{
+	t_tok	*target;
+	char	*temp_path;
+	t_redir	*tmp;
+
+	target = *cur;
+	if (!target || target->type != TOK_WORD)
+	{
+		syntax_err_tok(target);
+		return (false);
+	}
+	temp_path = read_heredoc(target->value);
+	if (!temp_path)
+		return (false);
+	if (!*redirs)
+		*redirs = new_redir(R_HEREDOC, temp_path);
+	else
+	{
+		tmp = *redirs;
+		while (tmp->next)
+			tmp = tmp->next;
+		tmp->next = new_redir(R_HEREDOC, temp_path);
+	}
+	free(temp_path);
+	*cur = target->next;
+	return (true);
+}
+
 bool	parse_one_redir(t_tok **cur, t_redir **redirs)
 {
 	t_tok			*op;
@@ -58,5 +87,7 @@ bool	parse_one_redir(t_tok **cur, t_redir **redirs)
 		return (false);
 	type = redir_type_from_tok(op->type);
 	*cur = op->next;
+	if (type == R_HEREDOC)
+		return (handle_heredoc_redir(cur, redirs));
 	return (add_redir_target(cur, type, redirs));
 }

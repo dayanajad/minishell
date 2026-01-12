@@ -6,7 +6,7 @@
 /*   By: dbinti-m <dbinti-m@student.42kl.edu.my>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/07 18:54:10 by dbinti-m          #+#    #+#             */
-/*   Updated: 2026/01/07 00:37:40 by dbinti-m         ###   ########.fr       */
+/*   Updated: 2026/01/12 22:16:04 by dbinti-m         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -198,11 +198,28 @@ t_redir	*new_redir(t_redir_type type, const char *target);
 int		exec_cmd_node(t_ast *ast, t_shell *shell);
 int		exec_ast(t_ast *ast, t_shell *shell);
 
+// srcs/execution/exec_logic.c
+
+int		exec_and_node(t_ast *ast, t_shell *shell);
+int		exec_or_node(t_ast *ast, t_shell *shell);
+
+// srcs/execution/exec_pipe.c
+
+int		exec_pipe_node(t_ast *ast, t_shell *shell);
+
+// srcs/execution/exec_subshell.c
+
+int		exec_subshell_node(t_ast *ast, t_shell *shell);
+
 // srcs/execution/redirections.c
 
 int		save_stdio(int saved[2]);
 int		restore_stdio(int saved[2]);
 bool	apply_redirections(t_redir *redirs);
+
+// srcs/execution/heredoc.c
+
+char	*read_heredoc(const char *delimiter);
 
 // srcs/execution/path.c
 
