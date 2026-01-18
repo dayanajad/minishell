@@ -12,7 +12,7 @@
 
 #include "minishell.h"
 
-static int	fill_simple_cmd(t_tok **cur, t_cmd *cmd)
+static int	fill_simple_cmd(t_tok **cur, t_cmd *cmd, t_shell *shell)
 {
 	t_tok	*tok;
 
@@ -25,21 +25,21 @@ static int	fill_simple_cmd(t_tok **cur, t_cmd *cmd)
 				return (0);
 			*cur = tok->next;
 		}
-		else if (parse_one_redir(cur, &cmd->redirs) == false)
+		else if (parse_one_redir(cur, &cmd->redirs, shell) == false)
 			return (0);
 		tok = *cur;
 	}
 	return (1);
 }
 
-static t_ast	*parse_simple_cmd(t_tok **cur)
+static t_ast	*parse_simple_cmd(t_tok **cur, t_shell *shell)
 {
 	t_cmd	*cmd;
 
 	cmd = new_cmd();
 	if (!cmd)
 		return (NULL);
-	if (!fill_simple_cmd(cur, cmd))
+	if (!fill_simple_cmd(cur, cmd, shell))
 	{
 		free_cmd(cmd);
 		return (NULL);
@@ -53,7 +53,7 @@ static t_ast	*parse_simple_cmd(t_tok **cur)
 	return (new_ast_cmd(cmd));
 }
 
-t_ast	*parse_subshell(t_tok **cur)
+t_ast	*parse_subshell(t_tok **cur, t_shell *shell)
 {
 	t_tok	*tok;
 	t_ast	*child;
@@ -62,7 +62,7 @@ t_ast	*parse_subshell(t_tok **cur)
 	if (tok && tok->type == TOK_LPAREN)
 	{
 		*cur = tok->next;
-		child = parse_or(cur);
+		child = parse_or(cur, shell);
 		if (!child)
 			return (NULL);
 		tok = *cur;
@@ -75,5 +75,5 @@ t_ast	*parse_subshell(t_tok **cur)
 		*cur = tok->next;
 		return (new_ast_subshell(child));
 	}
-	return (parse_simple_cmd(cur));
+	return (parse_simple_cmd(cur, shell));
 }

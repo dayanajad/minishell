@@ -18,13 +18,13 @@ static t_ast	*parse_err(t_ast *left)
 	return (NULL);
 }
 
-t_ast	*parse_pipe(t_tok **cur)
+t_ast	*parse_pipe(t_tok **cur, t_shell *shell)
 {
 	t_ast	*left;
 	t_tok	*tok;
 	t_ast	*right;
 
-	left = parse_subshell(cur);
+	left = parse_subshell(cur, shell);
 	if (!left)
 		return (NULL);
 	tok = *cur;
@@ -37,7 +37,7 @@ t_ast	*parse_pipe(t_tok **cur)
 			free_ast(left);
 			return (NULL);
 		}
-		right = parse_subshell(cur);
+		right = parse_subshell(cur, shell);
 		if (!right)
 			return (parse_err(left));
 		left = new_ast_bin(A_PIPE, left, right);
@@ -46,13 +46,13 @@ t_ast	*parse_pipe(t_tok **cur)
 	return (left);
 }
 
-t_ast	*parse_and(t_tok **cur)
+t_ast	*parse_and(t_tok **cur, t_shell *shell)
 {
 	t_ast	*left;
 	t_tok	*tok;
 	t_ast	*right;
 
-	left = parse_pipe(cur);
+	left = parse_pipe(cur, shell);
 	if (!left)
 		return (NULL);
 	tok = *cur;
@@ -65,7 +65,7 @@ t_ast	*parse_and(t_tok **cur)
 			free_ast(left);
 			return (NULL);
 		}
-		right = parse_pipe(cur);
+		right = parse_pipe(cur, shell);
 		if (!right)
 			return (parse_err(left));
 		left = new_ast_bin(A_AND, left, right);
@@ -74,13 +74,13 @@ t_ast	*parse_and(t_tok **cur)
 	return (left);
 }
 
-t_ast	*parse_or(t_tok **cur)
+t_ast	*parse_or(t_tok **cur, t_shell *shell)
 {
 	t_ast	*left;
 	t_tok	*tok;
 	t_ast	*right;
 
-	left = parse_and(cur);
+	left = parse_and(cur, shell);
 	if (!left)
 		return (NULL);
 	tok = *cur;
@@ -93,7 +93,7 @@ t_ast	*parse_or(t_tok **cur)
 			free_ast(left);
 			return (NULL);
 		}
-		right = parse_and(cur);
+		right = parse_and(cur, shell);
 		if (!right)
 			return (parse_err(left));
 		left = new_ast_bin(A_OR, left, right);
@@ -102,7 +102,7 @@ t_ast	*parse_or(t_tok **cur)
 	return (left);
 }
 
-t_ast	*parse(t_tok *tokens)
+t_ast	*parse(t_tok *tokens, t_shell *shell)
 {
 	t_tok	*cur;
 	t_ast	*root;
@@ -110,7 +110,7 @@ t_ast	*parse(t_tok *tokens)
 	if (!tokens)
 		return (NULL);
 	cur = tokens;
-	root = parse_or(&cur);
+	root = parse_or(&cur, shell);
 	if (!root)
 		return (NULL);
 	if (cur && cur->type != TOK_END)

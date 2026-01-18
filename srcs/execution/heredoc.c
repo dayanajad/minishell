@@ -50,10 +50,11 @@ static int	open_temp_file(char **path)
 	return (fd);
 }
 
-char	*read_heredoc(const char *delimiter)
+char	*read_heredoc(const char *delimiter, t_shell *shell)
 {
 	int		fd;
 	char	*line;
+	char	*expanded;
 	char	*temp_path;
 
 	fd = open_temp_file(&temp_path);
@@ -67,9 +68,10 @@ char	*read_heredoc(const char *delimiter)
 			free(line);
 			break ;
 		}
-		write(fd, line, ft_strlen(line));
+		expanded = expand_str(line, shell);
+		write(fd, expanded, ft_strlen(expanded));
 		write(fd, "\n", 1);
-		free(line);
+		free(expanded);
 	}
 	close(fd);
 	return (temp_path);

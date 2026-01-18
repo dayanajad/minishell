@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   quotes.c                                           :+:      :+:    :+:   */
+/*   lexer_utils.c                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: dbinti-m <dbinti-m@student.42kl.edu.my>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
@@ -12,60 +12,38 @@
 
 #include "minishell.h"
 
-static void	copy_unquoted(char *res, char *s)
+t_tok	*new_tok(t_tok_type type, char *value)
 {
-	int		i;
-	int		j;
-	bool	in_sq;
-	bool	in_dq;
+	t_tok	*tok;
 
-	i = 0;
-	j = 0;
-	in_sq = false;
-	in_dq = false;
-	while (s[i])
-	{
-		if (s[i] == '\'' && !in_dq)
-		{
-			in_sq = !in_sq;
-			i++;
-		}
-		else if (s[i] == '"' && !in_sq)
-		{
-			in_dq = !in_dq;
-			i++;
-		}
-		else
-			res[j++] = s[i++];
-	}
-	res[j] = '\0';
+	tok = malloc(sizeof(t_tok));
+	if (!tok)
+		return (NULL);
+	tok->type = type;
+	tok->value = value;
+	tok->has_wildcard = false;
+	tok->was_quoted = false;
+	tok->pos = 0;
+	tok->next = NULL;
+	return (tok);
 }
 
-static char	*strip_quotes(char *s)
-{
-	char	*res;
-
-	if (!s)
-		return (NULL);
-	res = malloc(ft_strlen(s) + 1);
-	if (!res)
-		return (NULL);
-	copy_unquoted(res, s);
-	free(s);
-	return (res);
-}
-
-void	remove_quotes(t_tok *tokens)
+void	tok_add(t_tok **head, t_tok *new)
 {
 	t_tok	*cur;
 
-	cur = tokens;
-	while (cur)
+	if (!*head)
 	{
-		if (cur->type == TOK_WORD)
-		{
-			cur->value = strip_quotes(cur->value);
-		}
-		cur = cur->next;
+		*head = new;
+		return ;
 	}
+	cur = *head;
+	while (cur->next)
+		cur = cur->next;
+	cur->next = new;
+}
+
+int	is_meta(char c)
+{
+	return (ft_strchr("|&()<>; \t\n", c) != NULL);
 }

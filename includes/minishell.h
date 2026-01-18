@@ -166,14 +166,14 @@ char	**env_to_arr(t_env *env);
 
 // srcs/parsing/parser.c
 
-t_ast	*parse(t_tok *tokens);
-t_ast	*parse_or(t_tok **cur);
-t_ast	*parse_and(t_tok **cur);
-t_ast	*parse_pipe(t_tok **cur);
+t_ast	*parse(t_tok *tokens, t_shell *shell);
+t_ast	*parse_or(t_tok **cur, t_shell *shell);
+t_ast	*parse_and(t_tok **cur, t_shell *shell);
+t_ast	*parse_pipe(t_tok **cur, t_shell *shell);
 
 // srcs/parsing/parse_command.c
 
-t_ast	*parse_subshell(t_tok **cur);
+t_ast	*parse_subshell(t_tok **cur, t_shell *shell);
 
 // srcs/parsing/parse_utils.c
 
@@ -183,7 +183,7 @@ void	syntax_err_tok(t_tok *tok);
 
 // srcs/parsing/parse_redir.c
 
-bool	parse_one_redir(t_tok **cur, t_redir **redirs);
+bool	parse_one_redir(t_tok **cur, t_redir **redirs, t_shell *shell);
 
 // srcs/parsing/ast_create.c
 
@@ -217,9 +217,14 @@ int		save_stdio(int saved[2]);
 int		restore_stdio(int saved[2]);
 bool	apply_redirections(t_redir *redirs);
 
+// srcs/execution/signals.c
+void	handle_sigint(int sig);
+void	setup_signals_interactive(void);
+void	setup_signals_exec(void);
+
 // srcs/execution/heredoc.c
 
-char	*read_heredoc(const char *delimiter);
+char	*read_heredoc(const char *delimiter, t_shell *shell);
 
 // srcs/execution/path.c
 
@@ -260,5 +265,32 @@ int		builtin_unset(char **av, t_env **env);
 // srcs/builtins/exit.c
 
 int		builtin_exit(char **av, t_shell *shell);
+
+// srcs/parsing/lexer_utils.c
+t_tok	*new_tok(t_tok_type type, char *value);
+void	tok_add(t_tok **head, t_tok *new);
+int		is_meta(char c);
+
+// srcs/parsing/lexer.c
+t_tok	*lexer(char *s);
+
+// srcs/parsing/syntax_check.c
+bool	check_syntax(t_tok *tokens);
+
+// srcs/parsing/expander.c
+void	expand_tokens(t_tok *tokens, t_shell *shell);
+char	*expand_str(char *s, t_shell *shell);
+
+// srcs/parsing/quotes.c
+void	remove_quotes(t_tok *tokens);
+
+// srcs/parsing/expander_utils.c
+char	*append_val(char *res, char *val);
+void	handle_quotes(char c, bool *in_sq, bool *in_dq);
+char	*process_char(char c);
+
+// srcs/utils/error.c
+int		ft_error(char *msg);
+void	perror_msg(char *msg);
 
 #endif

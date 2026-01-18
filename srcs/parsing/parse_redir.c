@@ -47,7 +47,7 @@ static bool	add_redir_target(t_tok **cur, t_redir_type type, t_redir **redirs)
 	return (true);
 }
 
-static bool	handle_heredoc_redir(t_tok **cur, t_redir **redirs)
+static bool	handle_heredoc_redir(t_tok **cur, t_redir **redirs, t_shell *shell)
 {
 	t_tok	*target;
 	char	*temp_path;
@@ -59,7 +59,7 @@ static bool	handle_heredoc_redir(t_tok **cur, t_redir **redirs)
 		syntax_err_tok(target);
 		return (false);
 	}
-	temp_path = read_heredoc(target->value);
+	temp_path = read_heredoc(target->value, shell);
 	if (!temp_path)
 		return (false);
 	if (!*redirs)
@@ -76,7 +76,7 @@ static bool	handle_heredoc_redir(t_tok **cur, t_redir **redirs)
 	return (true);
 }
 
-bool	parse_one_redir(t_tok **cur, t_redir **redirs)
+bool	parse_one_redir(t_tok **cur, t_redir **redirs, t_shell *shell)
 {
 	t_tok			*op;
 	t_redir_type	type;
@@ -88,6 +88,6 @@ bool	parse_one_redir(t_tok **cur, t_redir **redirs)
 	type = redir_type_from_tok(op->type);
 	*cur = op->next;
 	if (type == R_HEREDOC)
-		return (handle_heredoc_redir(cur, redirs));
+		return (handle_heredoc_redir(cur, redirs, shell));
 	return (add_redir_target(cur, type, redirs));
 }
