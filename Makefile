@@ -38,10 +38,8 @@ $(OBJ_DIR)/%.o: srcs/%.c
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(CPPFLAGS) -MMD -MP -c $< -o $@
 
-bonus: $(BONUS_NAME)
-
-$(BONUS_NAME): $(NAME)
-	ln -sf $(NAME) $(BONUS_NAME)
+bonus: $(LIBFT) $(OBJS)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS) $(LDLIBS) -o $(BONUS_NAME)
 
 clean:
 	$(RM) $(OBJ_DIR)
