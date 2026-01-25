@@ -12,80 +12,51 @@
 
 #include "minishell.h"
 
+int	lex_pipe_op(char *s, int i, t_tok **list);
+int	lex_amp_op(char *s, int i, t_tok **list);
+
+static int	lex_input_redir(char *s, int i, t_tok **list)
+{
+	if (s[i + 1] == '<')
+	{
+		tok_add(list, new_tok(TOK_HEREDOC, NULL, i));
+		return (i + 2);
+	}
+	tok_add(list, new_tok(TOK_IN, NULL, i));
+	return (i + 1);
+}
+
+static int	lex_output_redir(char *s, int i, t_tok **list)
+{
+	if (s[i + 1] == '|' || s[i + 1] == '>')
+	{
+		if (s[i + 1] == '>')
+			tok_add(list, new_tok(TOK_APP, NULL, i));
+		else
+			tok_add(list, new_tok(TOK_OUT, NULL, i));
+		return (i + 2);
+	}
+	tok_add(list, new_tok(TOK_OUT, NULL, i));
+	return (i + 1);
+}
+
 int	lex_redir_op(char *s, int i, t_tok **list)
 {
 	if (s[i] == '<')
-	{
-		if (s[i + 1] == '<')
-		{
-			tok_add(list, new_tok(TOK_HEREDOC, NULL, i));
-			return (i + 2);
-		}
-		tok_add(list, new_tok(TOK_IN, NULL, i));
-		return (i + 1);
-	}
+		return (lex_input_redir(s, i, list));
 	if (s[i] == '>')
-	{
-		if (s[i + 1] == '|')
-		{
-			tok_add(list, new_tok(TOK_OUT, NULL, i));
-			return (i + 2);
-		}
-		if (s[i + 1] == '>')
-		{
-			tok_add(list, new_tok(TOK_APP, NULL, i));
-			return (i + 2);
-		}
-		tok_add(list, new_tok(TOK_OUT, NULL, i));
-		return (i + 1);
-	}
+		return (lex_output_redir(s, i, list));
 	return (i);
 }
 
 int	lex_misc_op(char *s, int i, t_tok **list)
 {
 	if (s[i] == '(')
-	{
 		tok_add(list, new_tok(TOK_LPAREN, NULL, i));
-		return (i + 1);
-	}
-	if (s[i] == ')')
-	{
+	else if (s[i] == ')')
 		tok_add(list, new_tok(TOK_RPAREN, NULL, i));
-		return (i + 1);
-	}
-	if (s[i] == ';')
-	{
+	else if (s[i] == ';')
 		tok_add(list, new_tok(TOK_SEMI, NULL, i));
-		return (i + 1);
-	}
-	return (i + 1);
-}
-
-static int	lex_pipe_op(char *s, int i, t_tok **list)
-{
-	if (s[i + 1] == '&')
-	{
-		tok_add(list, new_tok(TOK_PIPE_AMP, NULL, i));
-		return (i + 2);
-	}
-	if (s[i + 1] == '|')
-	{
-		tok_add(list, new_tok(TOK_OR, NULL, i));
-		return (i + 2);
-	}
-	tok_add(list, new_tok(TOK_PIPE, NULL, i));
-	return (i + 1);
-}
-
-static int	lex_amp_op(char *s, int i, t_tok **list)
-{
-	if (s[i + 1] == '&')
-	{
-		tok_add(list, new_tok(TOK_AND, NULL, i));
-		return (i + 2);
-	}
-	tok_add(list, new_tok(TOK_AMP, NULL, i));
 	return (i + 1);
 }
 

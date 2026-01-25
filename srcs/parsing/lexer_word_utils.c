@@ -1,43 +1,41 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   expander_utils.c                                   :+:      :+:    :+:   */
+/*   lexer_word_utils.c                                :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: bpichyal <bpichyal@student.42kl.edu.my>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/01/25 02:16:35 by bpichyal          #+#    #+#             */
-/*   Updated: 2026/01/25 02:16:35 by bpichyal         ###   ########.fr       */
+/*   Created: 2026/01/26 12:00:00 by dbinti-m          #+#    #+#             */
+/*   Updated: 2026/01/26 12:00:00 by bpichyal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-char	*append_val(char *res, char *val)
+int	scan_ansi_c_quote(char *s, int i)
 {
-	char	*tmp;
-
-	if (!val)
-		return (res);
-	if (!res)
-		return (ft_strdup(val));
-	tmp = ft_strjoin(res, val);
-	free(res);
-	return (tmp);
+	i += 2;
+	while (s[i] && s[i] != '\'')
+	{
+		if (s[i] == '\\' && s[i + 1])
+			i++;
+		i++;
+	}
+	if (s[i] == '\'')
+		i++;
+	return (i);
 }
 
-void	handle_quotes(char c, bool *in_sq, bool *in_dq)
+int	scan_locale_quote(char *s, int i)
 {
-	if (c == '\'' && !*in_dq)
-		*in_sq = !*in_sq;
-	else if (c == '"' && !*in_sq)
-		*in_dq = !*in_dq;
-}
-
-char	*process_char(char c)
-{
-	char	str[2];
-
-	str[0] = c;
-	str[1] = '\0';
-	return (ft_strdup(str));
+	i += 2;
+	while (s[i] && s[i] != '"')
+	{
+		if (s[i] == '\\' && s[i + 1])
+			i++;
+		i++;
+	}
+	if (s[i] == '"')
+		i++;
+	return (i);
 }

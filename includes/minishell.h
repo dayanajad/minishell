@@ -36,9 +36,7 @@
 sig_atomic_t	get_signal(void);
 void			set_signal(int sig);
 
-typedef struct s_ast			t_ast;
-
-// TOKEN
+typedef struct s_ast	t_ast;
 
 typedef enum e_tok_type
 {
@@ -70,8 +68,6 @@ typedef struct s_tok
 	struct s_tok	*next;
 }	t_tok;
 
-// REDIRECTIONS
-
 typedef enum e_redir_type
 {
 	R_IN,
@@ -82,10 +78,10 @@ typedef enum e_redir_type
 
 typedef struct s_redir
 {
-	t_redir_type		type;
+	t_redir_type	type;
 	int				fd;
-	char				*target;
-	struct s_redir		*next;
+	char			*target;
+	struct s_redir	*next;
 }	t_redir;
 
 typedef struct s_cmd
@@ -94,8 +90,6 @@ typedef struct s_cmd
 	t_redir	*redirs;
 	t_tok	*raw_toks;
 }	t_cmd;
-
-// ABSTRACT SYNTAX TREE (AST)
 
 typedef enum e_ast_type
 {
@@ -125,8 +119,6 @@ typedef struct s_ast
 	} u_data;
 }	t_ast;
 
-// ENVIRONMENT
-
 typedef struct s_env
 {
 	char			*key;
@@ -134,15 +126,11 @@ typedef struct s_env
 	struct s_env	*next;
 }	t_env;
 
-// HEREDOC STRUCT
-
 typedef struct s_hdoc
 {
 	char			*path;
 	struct s_hdoc	*next;
 }	t_hdoc;
-
-// SHELL
 
 typedef struct s_shell
 {
@@ -162,7 +150,7 @@ typedef struct s_pipe_flags
 {
 	bool	use_pipe;
 	bool	keep_pipe_open;
-} 	t_pipe_flags;
+}	t_pipe_flags;
 
 typedef struct s_pipe_state
 {
@@ -173,275 +161,136 @@ typedef struct s_pipe_state
 	int		status_left;
 	bool	right_has_stdin_redir;
 	bool	right_is_builtin;
-} 	t_pipe_state;
-
-// srcs/utils/utils.c
-
-char	*read_line_nobuf(int fd);
-
-// srcs/main_*.c
-
-void	init_shell(t_shell *shell, char **envp);
-void	setup_stdout_nul_filter(t_shell *shell);
-int		is_blank_line(const char *line);
-void	sanitize_line(char *line);
-char	*read_input_line(t_shell *shell);
-void	process_line(char *line, t_shell *shell);
-void	finalize_shell(t_shell *shell);
-int		run_shell(t_shell *shell);
-
-// srcs/utils/free.c
-
-void	free_str_arr(char **arr);
-void	free_env(t_env *env);
-void	free_redirs(t_redir *redirs);
-void	free_cmd(t_cmd *cmd);
-void	free_ast(t_ast *ast);
-void	free_tokens(t_tok *tokens);
-
-// srcs/utils/env_utils.c
-
-char	*get_env_value(t_env *env, char *key);
-
-// srcs/utils/arr_env.c
-
-t_env	*arr_to_env(char **envp);
-
-// srcs/utils/env_arr.c
-
-char	**env_to_arr(t_env *env);
-
-// srcs/parsing/parser.c
-
-t_ast	*parse(t_tok *tokens, t_shell *shell);
-t_ast	*parse_or(t_tok **cur, t_shell *shell);
-t_ast	*parse_and(t_tok **cur, t_shell *shell);
-t_ast	*parse_pipe(t_tok **cur, t_shell *shell);
-t_ast	*parse_err(t_ast *left);
-
-// srcs/parsing/parser_or_helpers.c
-
-t_ast	*parse_or_token(t_tok **cur, t_shell *shell, t_ast *left);
-t_ast	*parse_amp_token(t_tok **cur, t_shell *shell, t_ast *left);
-
-// srcs/parsing/parse_command.c
-
-t_ast	*parse_subshell(t_tok **cur, t_shell *shell);
-
-// srcs/parsing/parse_utils.c
-
-bool	is_cmd_end(t_tok *tok);
-bool	av_push(char ***avp, const char *word);
-void	syntax_err_tok(t_tok *tok);
-
-// srcs/parsing/tok_repr_utils.c
-
-const char	*tok_repr(t_tok *tok);
-const char	*tok_repr_op(t_tok_type type);
-
-// srcs/parsing/parse_redir.c
-
-bool	parse_one_redir(t_tok **cur, t_redir **redirs, t_shell *shell);
-
-// srcs/parsing/parse_redir_utils.c
-
-char	*unescape_backslashes(const char *s);
-void	append_redir(t_redir **redirs, t_redir *new);
-
-// srcs/parsing/ast_create.c
-
-t_cmd	*new_cmd(void);
-t_ast	*new_ast_cmd(t_cmd *cmd);
-t_ast	*new_ast_bin(t_ast_type type, t_ast *left, t_ast *right);
-t_ast	*new_ast_subshell(t_ast	*child);
-t_redir	*new_redir(t_redir_type type, int fd, const char *target);
-
-// srcs/execution/executor.c
-
-int		exec_cmd_node(t_ast *ast, t_shell *shell);
-int		exec_ast(t_ast *ast, t_shell *shell);
-
-// srcs/execution/exec_logic.c
-
-int		exec_and_node(t_ast *ast, t_shell *shell);
-int		exec_or_node(t_ast *ast, t_shell *shell);
-int		exec_seq_node(t_ast *ast, t_shell *shell);
-int		exec_bg_node(t_ast *ast, t_shell *shell);
-
-// srcs/execution/exec_bg_utils.c
-
-int		exec_bg_open_pipe(bool capture, int outpipe[2]);
-void	exec_bg_close_pipe(int outpipe[2]);
-void	exec_bg_flush_output(int fd);
-
-// srcs/execution/exec_bg_helpers.c
-
-void	exec_bg_child(t_ast *ast, t_shell *shell, int outpipe[2], bool capture);
-int		exec_bg_parent(t_ast *ast, t_shell *shell, int outpipe[2], pid_t pid);
-
-// srcs/execution/exec_pipe.c
-
-int		exec_pipe_node(t_ast *ast, t_shell *shell);
-
-// srcs/execution/exec_pipe_utils.c
-
-bool	exec_pipe_cmd_has_input(t_ast *ast);
-bool	exec_pipe_is_builtin_cmd(t_ast *ast);
-
-// srcs/execution/exec_subshell.c
-
-int		exec_subshell_node(t_ast *ast, t_shell *shell);
-
-// srcs/execution/redirections.c
-
-int		save_stdio(int saved[3]);
-int		restore_stdio(int saved[3]);
-bool	apply_redirections(t_redir *redirs, t_shell *shell);
-
-// srcs/execution/redir_utils.c
-
-bool	resolve_redir_target(t_redir *r, char **target, char ***matches);
-bool	dup_and_close(int fd, int dest);
-
-// srcs/execution/signals.c
-void	handle_sigint(int sig);
-void	setup_signals_interactive(void);
-void	setup_signals_exec(void);
-
-// srcs/execution/heredoc.c
-
-char	*read_heredoc(const char *delimiter, t_shell *shell, bool expand);
-
-// srcs/execution/heredoc_utils.c
-
-int		open_temp_file(char **path);
-void	warn_heredoc_eof(const char *delimiter);
-
-// srcs/execution/path.c
-
-char	*find_in_path(char *cmd, t_env *env);
-
-// srcs/execution/exec_utils.c
-
-int		normalize_status(int status);
-void	exec_external_child(t_cmd *cmd, t_shell *shell);
-int		exec_external_cmd(t_cmd *cmd, t_shell *shell);
-
-// srcs/execution/exec_utils_helpers.c
-
-bool	exec_suppress_error(t_shell *shell);
-void	exec_print_cmd_not_found(t_shell *shell, char *cmd);
-void	exec_print_is_dir(t_shell *shell, char *path);
-void	exec_as_script(char *path, t_cmd *cmd, char **envp);
-void	exec_error_exit(t_shell *shell, char *path);
-int		exec_wait_for_child(pid_t pid);
-
-// srcs/builtins/builtin_utils.c
-
-bool	is_builtin(const char *name);
-int		exec_builtin(t_cmd *cmd, t_shell *shell);
-
-// srcs/builtins/builtin_utils_helpers.c
-
-bool	echo_suppresses_newline(char **av);
-int		exec_builtin_echo(t_cmd *cmd, t_shell *shell);
-
-// srcs/builtins/echo.c
-
-int		builtin_echo(char **av);
-
-// srcs/builtins/echo_utils.c
-
-int		write_all(int fd, const char *s, size_t len);
-int		echo_write_str(const char *s);
-int		echo_write_ch(char c);
-int		write_echo_args(char **av, int i);
-
-//	srcs/builtins/cd.c
-
-int		builtin_cd(char **av, t_shell *shell);
-
-// srcs/builtins/pwd_env.c
-
-int		builtin_pwd(void);
-int		builtin_env(t_env *env);
-
-// srcs/builtins/export.c
-
-int		builtin_export(char **av, t_env **env);
-
-// srcs/builtins/export_utils.c
-
-bool	export_is_valid_identifier(const char *s);
-t_env	*export_find_env_node(t_env *env, const char *key);
-void	export_set_env_var(t_env **env, char *key, char *value);
-
-// srcs/builtin/unset.c
-
-int		builtin_unset(char **av, t_env **env);
-
-// srcs/builtins/exit.c
-
-int		builtin_exit(char **av, t_shell *shell);
-
-// srcs/parsing/lexer_utils.c
-t_tok	*new_tok(t_tok_type type, char *value, int pos);
-void	tok_add(t_tok **head, t_tok *new);
-int		is_meta(char c);
-
-// srcs/parsing/lexer.c
-t_tok	*lexer(char *s);
-
-// srcs/parsing/lexer_word.c
-int		lex_word(char *s, int i, t_tok **list);
-
-// srcs/parsing/lexer_ops.c
-int		lex_op(char *s, int i, t_tok **list);
-int		lex_redir_op(char *s, int i, t_tok **list);
-int		lex_misc_op(char *s, int i, t_tok **list);
-
-// srcs/parsing/lexer_scan.c
-int		scan_to_comment_or_eof(char *s, char *quote);
-t_tok	*lex_tokens(char *s);
-
-// srcs/parsing/syntax_check.c
-bool	check_syntax(t_tok *tokens);
-
-// srcs/parsing/syntax_utils.c
-
-bool	is_op_token(t_tok_type type);
-bool	is_redir_token(t_tok_type type);
-bool	check_op_seq(t_tok *cur);
-bool	check_redir_seq(t_tok *cur);
-
-// srcs/parsing/expander.c
-void	expand_tokens(t_tok **tokens, t_shell *shell);
-char	*expand_str(char *s, t_shell *shell);
-
-// srcs/parsing/expander_helpers.c
-
-char	*expand_var(char *s, int *i, t_shell *shell);
-char	*get_next_chunk(char *s, int *i, t_shell *shell, bool sq, bool dq);
-char	*expand_heredoc_str(char *s, t_shell *shell);
-
-// srcs/parsing/wildcards.c
-void	expand_wildcards(t_tok **tokens);
-char	**get_matches(const char *pattern);
-
-// srcs/parsing/wildcard_utils.c
-
-void	insert_matches(t_tok **cur, char **matches);
-
-// srcs/parsing/quotes.c
-void	remove_quotes(t_tok *tokens);
-
-// srcs/parsing/expander_utils.c
-char	*append_val(char *res, char *val);
-void	handle_quotes(char c, bool *in_sq, bool *in_dq);
-char	*process_char(char c);
-
-// srcs/utils/error.c
-int		ft_error(char *msg);
-void	perror_msg(char *msg);
+}	t_pipe_state;
+
+typedef struct s_chunk_ctx
+{
+	t_shell	*sh;
+	bool	sq;
+	bool	dq;
+}	t_chunk_ctx;
+
+char			*read_line_nobuf(int fd);
+void			init_shell(t_shell *shell, char **envp);
+void			setup_stdout_nul_filter(t_shell *shell);
+int				is_blank_line(const char *line);
+void			sanitize_line(char *line);
+char			*read_input_line(t_shell *shell);
+void			process_line(char *line, t_shell *shell);
+void			finalize_shell(t_shell *shell);
+int				run_shell(t_shell *shell);
+void			free_str_arr(char **arr);
+void			free_env(t_env *env);
+void			free_redirs(t_redir *redirs);
+void			free_cmd(t_cmd *cmd);
+void			free_ast(t_ast *ast);
+void			free_tokens(t_tok *tokens);
+char			*get_env_value(t_env *env, char *key);
+t_env			*arr_to_env(char **envp);
+char			**env_to_arr(t_env *env);
+t_ast			*parse(t_tok *tokens, t_shell *shell);
+t_ast			*parse_or(t_tok **cur, t_shell *shell);
+t_ast			*parse_and(t_tok **cur, t_shell *shell);
+t_ast			*parse_pipe(t_tok **cur, t_shell *shell);
+t_ast			*parse_err(t_ast *left);
+t_ast			*parse_or_token(t_tok **cur, t_shell *shell, t_ast *left);
+t_ast			*parse_amp_token(t_tok **cur, t_shell *shell, t_ast *left);
+t_ast			*parse_subshell(t_tok **cur, t_shell *shell);
+bool			is_cmd_end(t_tok *tok);
+bool			av_push(char ***avp, const char *word);
+void			syntax_err_tok(t_tok *tok);
+const char		*tok_repr(t_tok *tok);
+const char		*tok_repr_op(t_tok_type type);
+bool			parse_one_redir(t_tok **cur, t_redir **redirs, t_shell *shell);
+char			*unescape_backslashes(const char *s);
+void			append_redir(t_redir **redirs, t_redir *new);
+t_cmd			*new_cmd(void);
+t_ast			*new_ast_cmd(t_cmd *cmd);
+t_ast			*new_ast_bin(t_ast_type type, t_ast *left, t_ast *right);
+t_ast			*new_ast_subshell(t_ast	*child);
+t_redir			*new_redir(t_redir_type type, int fd, const char *target);
+int				exec_cmd_node(t_ast *ast, t_shell *shell);
+int				exec_ast(t_ast *ast, t_shell *shell);
+int				exec_and_node(t_ast *ast, t_shell *shell);
+int				exec_or_node(t_ast *ast, t_shell *shell);
+int				exec_seq_node(t_ast *ast, t_shell *shell);
+int				exec_bg_node(t_ast *ast, t_shell *shell);
+int				exec_bg_open_pipe(bool capture, int outpipe[2]);
+void			exec_bg_close_pipe(int outpipe[2]);
+void			exec_bg_flush_output(int fd);
+void			exec_bg_child(t_ast *ast, t_shell *sh, int p[2], bool c);
+int				exec_bg_parent(t_ast *ast, t_shell *sh, int p[2], pid_t pid);
+int				exec_pipe_node(t_ast *ast, t_shell *shell);
+bool			exec_pipe_cmd_has_input(t_ast *ast);
+bool			exec_pipe_is_builtin_cmd(t_ast *ast);
+int				exec_subshell_node(t_ast *ast, t_shell *shell);
+int				save_stdio(int saved[3]);
+int				restore_stdio(int saved[3]);
+bool			apply_redirections(t_redir *redirs, t_shell *shell);
+bool			resolve_redir_target(t_redir *r, char **target, char ***m);
+bool			dup_and_close(int fd, int dest);
+void			handle_sigint(int sig);
+void			setup_signals_interactive(void);
+void			setup_signals_exec(void);
+char			*read_heredoc(const char *delim, t_shell *shell, bool expand);
+int				open_temp_file(char **path);
+void			warn_heredoc_eof(const char *delimiter);
+char			*find_in_path(char *cmd, t_env *env);
+int				normalize_status(int status);
+void			exec_external_child(t_cmd *cmd, t_shell *shell);
+int				exec_external_cmd(t_cmd *cmd, t_shell *shell);
+bool			exec_suppress_error(t_shell *shell);
+void			exec_print_cmd_not_found(t_shell *shell, char *cmd);
+void			exec_print_is_dir(t_shell *shell, char *path);
+void			exec_as_script(char *path, t_cmd *cmd, char **envp);
+void			exec_error_exit(t_shell *shell, char *path);
+int				exec_wait_for_child(pid_t pid);
+bool			is_builtin(const char *name);
+int				exec_builtin(t_cmd *cmd, t_shell *shell);
+bool			echo_suppresses_newline(char **av);
+int				exec_builtin_echo(t_cmd *cmd, t_shell *shell);
+int				builtin_echo(char **av);
+int				write_all(int fd, const char *s, size_t len);
+int				echo_write_str(const char *s);
+int				echo_write_ch(char c);
+int				write_echo_args(char **av, int i);
+int				builtin_cd(char **av, t_shell *shell);
+int				builtin_pwd(void);
+int				builtin_env(t_env *env);
+int				builtin_export(char **av, t_env **env);
+bool			export_is_valid_identifier(const char *s);
+t_env			*export_find_env_node(t_env *env, const char *key);
+void			export_set_env_var(t_env **env, char *key, char *value);
+int				builtin_unset(char **av, t_env **env);
+int				builtin_exit(char **av, t_shell *shell);
+t_tok			*new_tok(t_tok_type type, char *value, int pos);
+void			tok_add(t_tok **head, t_tok *new);
+int				is_meta(char c);
+t_tok			*lexer(char *s);
+int				lex_word(char *s, int i, t_tok **list);
+int				lex_op(char *s, int i, t_tok **list);
+int				lex_redir_op(char *s, int i, t_tok **list);
+int				lex_misc_op(char *s, int i, t_tok **list);
+int				scan_to_comment_or_eof(char *s, char *quote);
+t_tok			*lex_tokens(char *s);
+bool			check_syntax(t_tok *tokens);
+bool			is_op_token(t_tok_type type);
+bool			is_redir_token(t_tok_type type);
+bool			check_op_seq(t_tok *cur);
+bool			check_redir_seq(t_tok *cur);
+void			expand_tokens(t_tok **tokens, t_shell *shell);
+char			*expand_str(char *s, t_shell *shell);
+char			*expand_var(char *s, int *i, t_shell *shell);
+char			*get_next_chunk(char *s, int *i, t_chunk_ctx *ctx);
+char			*expand_heredoc_str(char *s, t_shell *shell);
+void			expand_wildcards(t_tok **tokens);
+char			**get_matches(const char *pattern);
+void			insert_matches(t_tok **cur, char **matches);
+void			remove_quotes(t_tok *tokens);
+char			*append_val(char *res, char *val);
+void			handle_quotes(char c, bool *in_sq, bool *in_dq);
+char			*process_char(char c);
+int				ft_error(char *msg);
+void			perror_msg(char *msg);
 
 #endif

@@ -16,7 +16,7 @@ static void	init_pwd_and_shlvl(t_shell *shell)
 {
 	char	cwd[4096];
 	char	*val;
-	int	lvl;
+	int		lvl;
 	char	*lvl_s;
 
 	if (!get_env_value(shell->env, "PWD"))

@@ -12,6 +12,9 @@
 
 #include "minishell.h"
 
+void	write_heredoc_line(int fd, char *line, t_shell *shell, bool expand);
+char	*read_heredoc_raw(void);
+
 static char	*trim_nl(char *line)
 {
 	size_t	len;
@@ -24,68 +27,41 @@ static char	*trim_nl(char *line)
 	return (line);
 }
 
-static void	write_heredoc_line(int fd, char *line, t_shell *shell,
-		bool expand)
+static int	is_heredoc_delim(char *line, const char *delim)
 {
-	char	*expanded;
-	char	*dup;
-
-	if (expand)
-	{
-		dup = ft_strdup(line);
-		if (!dup)
-			return ;
-		expanded = expand_heredoc_str(dup, shell);
-	}
-	else
-		expanded = ft_strdup(line);
-	if (!expanded)
-		return ;
-	write(fd, expanded, ft_strlen(expanded));
-	write(fd, "\n", 1);
-	free(expanded);
+	trim_nl(line);
+	return (ft_strcmp(line, delim) == 0);
 }
 
-static void	read_heredoc_loop(int fd, const char *delimiter, t_shell *shell,
-		bool expand)
+static void	handle_heredoc_eof(const char *delim, t_shell *shell)
 {
-	char	*line;
-	char	*raw;
-
-	while (1)
-	{
-		if (isatty(STDIN_FILENO))
-			raw = readline("> ");
-		else
-			raw = read_line_nobuf(STDIN_FILENO);
-		line = raw;
-		if (!line)
-		{
-			if (!shell->heredoc_eof)
-				warn_heredoc_eof(delimiter);
-			shell->heredoc_eof = 1;
-			break ;
-		}
-		trim_nl(line);
-		if (ft_strcmp(line, delimiter) == 0)
-		{
-			free(line);
-			break ;
-		}
-		write_heredoc_line(fd, line, shell, expand);
-		free(line);
-	}
+	if (!shell->heredoc_eof)
+		warn_heredoc_eof(delim);
+	shell->heredoc_eof = 1;
 }
 
 char	*read_heredoc(const char *delimiter, t_shell *shell, bool expand)
 {
 	int		fd;
 	char	*temp_path;
+	char	*line;
 
 	fd = open_temp_file(&temp_path);
 	if (fd < 0)
 		return (NULL);
-	read_heredoc_loop(fd, delimiter, shell, expand);
+	while (1)
+	{
+		line = read_heredoc_raw();
+		if (!line)
+		{
+			handle_heredoc_eof(delimiter, shell);
+			break ;
+		}
+		if (is_heredoc_delim(line, delimiter))
+			return (free(line), close(fd), temp_path);
+		write_heredoc_line(fd, line, shell, expand);
+		free(line);
+	}
 	close(fd);
 	return (temp_path);
 }

@@ -74,7 +74,6 @@ t_ast	*new_ast_subshell(t_ast *child)
 	return (node);
 }
 
-
 t_redir	*new_redir(t_redir_type type, int fd, const char *target)
 {
 	t_redir	*r;

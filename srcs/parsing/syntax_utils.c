@@ -12,6 +12,9 @@
 
 #include "minishell.h"
 
+bool	check_semi_seq(t_tok *cur);
+bool	check_op_end(t_tok *cur);
+
 bool	is_op_token(t_tok_type type)
 {
 	return (type == TOK_PIPE || type == TOK_AND || type == TOK_OR
@@ -29,51 +32,20 @@ bool	check_op_seq(t_tok *cur)
 	if (!is_op_token(cur->type))
 		return (true);
 	if (cur->type == TOK_SEMI)
-	{
-		if (!cur->next || cur->next->type == TOK_END)
-			return (true);
-		if (cur->next->type == TOK_SEMI)
-		{
-			syntax_err_tok(cur->next);
-			return (false);
-		}
-		if (is_op_token(cur->next->type))
-		{
-			syntax_err_tok(cur->next);
-			return (false);
-		}
-		return (true);
-	}
+		return (check_semi_seq(cur));
 	if (cur->type == TOK_PIPE_AMP)
 	{
 		syntax_err_tok(cur);
 		return (false);
 	}
 	if (!cur->next || is_cmd_end(cur->next))
-	{
-		if (cur->type == TOK_AMP
-			&& (!cur->next || cur->next->type == TOK_END))
-			return (true);
-		if (cur->next && cur->next->type == TOK_END)
-		{
-			ft_putstr_fd("minishell: syntax error: ", 2);
-			ft_putstr_fd("unexpected end of file\n", 2);
-			return (false);
-		}
-		syntax_err_tok(cur->next);
-		return (false);
-	}
+		return (check_op_end(cur));
 	return (true);
 }
 
-bool	check_redir_seq(t_tok *cur)
+static bool	check_heredoc_edge_cases(t_tok *cur)
 {
-	if (!is_redir_token(cur->type))
-		return (true);
-	if (cur->next && cur->next->type == TOK_WORD)
-		return (true);
-	if (cur->type == TOK_HEREDOC && cur->next
-		&& cur->next->type == TOK_IN
+	if (cur->type == TOK_HEREDOC && cur->next && cur->next->type == TOK_IN
 		&& (!cur->next->next || cur->next->next->type == TOK_END))
 	{
 		ft_putstr_fd("minishell: syntax error near ", 2);
@@ -87,6 +59,17 @@ bool	check_redir_seq(t_tok *cur)
 		ft_putstr_fd("unexpected token `<'\n", 2);
 		return (false);
 	}
+	return (true);
+}
+
+bool	check_redir_seq(t_tok *cur)
+{
+	if (!is_redir_token(cur->type))
+		return (true);
+	if (cur->next && cur->next->type == TOK_WORD)
+		return (true);
+	if (!check_heredoc_edge_cases(cur))
+		return (false);
 	syntax_err_tok(cur->next);
 	return (false);
 }

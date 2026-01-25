@@ -12,37 +12,9 @@
 
 #include "minishell.h"
 
-static char	get_open_quote(char *line)
-{
-	char	quote;
-
-	quote = 0;
-	scan_to_comment_or_eof(line, &quote);
-	return (quote);
-}
-
-static char	*join_piece(char *acc, char *piece, bool insert_newline)
-{
-	char	*tmp;
-
-	if (!acc)
-		return (piece);
-	if (insert_newline)
-	{
-		tmp = ft_strjoin(acc, "\n");
-		free(acc);
-		if (!tmp)
-		{
-			free(piece);
-			return (NULL);
-		}
-		acc = tmp;
-	}
-	tmp = ft_strjoin(acc, piece);
-	free(acc);
-	free(piece);
-	return (tmp);
-}
+char	get_open_quote(char *line);
+char	*join_piece(char *acc, char *piece, bool insert_newline);
+char	*handle_multiline_eof(char *line, char quote);
 
 int	is_blank_line(const char *line)
 {
@@ -63,6 +35,29 @@ void	sanitize_line(char *line)
 		line[len - 1] = '\0';
 }
 
+static char	*get_first_line(t_shell *shell, bool interactive)
+{
+	if (interactive)
+	{
+		if (shell && shell->noninteractive_prompt_newline)
+		{
+			write(STDOUT_FILENO, "\n", 1);
+			shell->noninteractive_prompt_newline = 0;
+		}
+		return (readline("minishell$ "));
+	}
+	if (shell)
+		shell->noninteractive_prompt_newline = 0;
+	return (read_line_nobuf(STDIN_FILENO));
+}
+
+static char	*read_next_piece(bool interactive)
+{
+	if (interactive)
+		return (readline("> "));
+	return (read_line_nobuf(STDIN_FILENO));
+}
+
 char	*read_input_line(t_shell *shell)
 {
 	char	*line;
@@ -71,39 +66,15 @@ char	*read_input_line(t_shell *shell)
 	bool	interactive;
 
 	interactive = isatty(STDIN_FILENO);
-	if (interactive)
-	{
-		if (shell && shell->noninteractive_prompt_newline)
-		{
-			write(STDOUT_FILENO, "\n", 1);
-			shell->noninteractive_prompt_newline = 0;
-		}
-		line = readline("minishell$ ");
-	}
-	else
-	{
-		if (shell)
-			shell->noninteractive_prompt_newline = 0;
-		line = read_line_nobuf(STDIN_FILENO);
-	}
+	line = get_first_line(shell, interactive);
 	quote = 0;
 	if (line)
 		quote = get_open_quote(line);
 	while (line && quote)
 	{
-		if (interactive)
-			next = readline("> ");
-		else
-			next = read_line_nobuf(STDIN_FILENO);
+		next = read_next_piece(interactive);
 		if (!next)
-		{
-			ft_putstr_fd("minishell: unexpected EOF while looking ", 2);
-			ft_putstr_fd("for matching `", 2);
-			ft_putchar_fd(quote, 2);
-			ft_putendl_fd("'", 2);
-			free(line);
-			return (NULL);
-		}
+			return (handle_multiline_eof(line, quote));
 		line = join_piece(line, next, interactive);
 		if (!line)
 			return (NULL);

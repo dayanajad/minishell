@@ -58,3 +58,31 @@ void	warn_heredoc_eof(const char *delimiter)
 	ft_putstr_fd(delimiter, 2);
 	ft_putendl_fd("')", 2);
 }
+
+void	write_heredoc_line(int fd, char *line, t_shell *shell, bool expand)
+{
+	char	*expanded;
+	char	*dup;
+
+	if (expand)
+	{
+		dup = ft_strdup(line);
+		if (!dup)
+			return ;
+		expanded = expand_heredoc_str(dup, shell);
+	}
+	else
+		expanded = ft_strdup(line);
+	if (!expanded)
+		return ;
+	write(fd, expanded, ft_strlen(expanded));
+	write(fd, "\n", 1);
+	free(expanded);
+}
+
+char	*read_heredoc_raw(void)
+{
+	if (isatty(STDIN_FILENO))
+		return (readline("> "));
+	return (read_line_nobuf(STDIN_FILENO));
+}

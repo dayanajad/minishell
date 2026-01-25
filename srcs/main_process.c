@@ -49,6 +49,25 @@ static t_tok	*lex_and_prepare(char *line, t_shell *shell)
 	return (tokens);
 }
 
+static void	handle_parse_failure(t_shell *shell)
+{
+	shell->last_status = 2;
+	if (!isatty(STDIN_FILENO))
+		shell->should_exit = 1;
+}
+
+static void	execute_and_free(t_ast *ast, t_tok *tokens, t_shell *shell)
+{
+	if (ast)
+	{
+		exec_ast(ast, shell);
+		free_ast(ast);
+	}
+	else
+		handle_parse_failure(shell);
+	free_tokens(tokens);
+}
+
 void	process_line(char *line, t_shell *shell)
 {
 	t_tok	*tokens;
@@ -66,16 +85,5 @@ void	process_line(char *line, t_shell *shell)
 	if (!tokens)
 		return ;
 	ast = parse(tokens, shell);
-	if (ast)
-	{
-		exec_ast(ast, shell);
-		free_ast(ast);
-	}
-	else
-	{
-		shell->last_status = 2;
-		if (!isatty(STDIN_FILENO))
-			shell->should_exit = 1;
-	}
-	free_tokens(tokens);
+	execute_and_free(ast, tokens, shell);
 }

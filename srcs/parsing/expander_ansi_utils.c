@@ -1,43 +1,35 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   expander_utils.c                                   :+:      :+:    :+:   */
+/*   expander_ansi_utils.c                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: bpichyal <bpichyal@student.42kl.edu.my>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/01/25 02:16:35 by bpichyal          #+#    #+#             */
-/*   Updated: 2026/01/25 02:16:35 by bpichyal         ###   ########.fr       */
+/*   Created: 2026/01/26 12:00:00 by dbinti-m          #+#    #+#             */
+/*   Updated: 2026/01/26 12:00:00 by bpichyal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-char	*append_val(char *res, char *val)
+int	ansi_is_hex_digit(char c)
 {
-	char	*tmp;
-
-	if (!val)
-		return (res);
-	if (!res)
-		return (ft_strdup(val));
-	tmp = ft_strjoin(res, val);
-	free(res);
-	return (tmp);
+	if (ft_isdigit(c))
+		return (1);
+	if (c >= 'a' && c <= 'f')
+		return (1);
+	if (c >= 'A' && c <= 'F')
+		return (1);
+	return (0);
 }
 
-void	handle_quotes(char c, bool *in_sq, bool *in_dq)
+int	ansi_hex_val(char c)
 {
-	if (c == '\'' && !*in_dq)
-		*in_sq = !*in_sq;
-	else if (c == '"' && !*in_sq)
-		*in_dq = !*in_dq;
-}
-
-char	*process_char(char c)
-{
-	char	str[2];
-
-	str[0] = c;
-	str[1] = '\0';
-	return (ft_strdup(str));
+	if (c >= '0' && c <= '9')
+		return (c - '0');
+	if (c >= 'a' && c <= 'f')
+		return (10 + (c - 'a'));
+	if (c >= 'A' && c <= 'F')
+		return (10 + (c - 'A'));
+	return (0);
 }

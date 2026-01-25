@@ -31,27 +31,38 @@ int	scan_to_comment_or_eof(char *s, char *quote)
 	return (len);
 }
 
+static void	mark_join(t_tok *list)
+{
+	t_tok	*last;
+
+	last = list;
+	while (last->next)
+		last = last->next;
+	last->join_next = true;
+}
+
+static int	skip_whitespace(char *s, int i, t_tok *list)
+{
+	int	start_i;
+
+	start_i = i;
+	while (s[i] && ft_strchr(" \t\n", s[i]))
+		i++;
+	if (list && i == start_i)
+		mark_join(list);
+	return (i);
+}
+
 t_tok	*lex_tokens(char *s)
 {
 	t_tok	*list;
-	t_tok	*last;
 	int		i;
-	int		start_i;
 
 	list = NULL;
 	i = 0;
 	while (s[i])
 	{
-		start_i = i;
-		while (s[i] && ft_strchr(" \t\n", s[i]))
-			i++;
-		if (list && i == start_i)
-		{
-			last = list;
-			while (last->next)
-				last = last->next;
-			last->join_next = true;
-		}
+		i = skip_whitespace(s, i, list);
 		if (!s[i])
 			break ;
 		if (s[i] == '#' && (i == 0 || ft_strchr(" \t", s[i - 1])))
