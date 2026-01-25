@@ -27,8 +27,9 @@ static char	*build_path(char *dir, char *cmd)
 
 static char	*search_in_dirs(char **dirs, char *cmd)
 {
-	char	*path;
-	int		i;
+	char		*path;
+	int			i;
+	struct stat	st;
 
 	i = 0;
 	while (dirs[i])
@@ -36,7 +37,8 @@ static char	*search_in_dirs(char **dirs, char *cmd)
 		path = build_path(dirs[i], cmd);
 		if (!path)
 			return (NULL);
-		if (access(path, X_OK) == 0)
+		if (access(path, X_OK) == 0 && stat(path, &st) == 0
+			&& !S_ISDIR(st.st_mode))
 		{
 			free_str_arr(dirs);
 			return (path);
@@ -52,14 +54,28 @@ char	*find_in_path(char *cmd, t_env *env)
 {
 	char	*path_env;
 	char	**dirs;
+	char	**fallback;
 
 	if (!cmd || !cmd[0])
 		return (NULL);
 	if (ft_strchr(cmd, '/'))
+	{
 		return (ft_strdup(cmd));
+	}
 	path_env = get_env_value(env, "PATH");
 	if (!path_env)
-		return (NULL);
+	{
+		fallback = ft_calloc(2, sizeof(*fallback));
+		if (!fallback)
+			return (NULL);
+		fallback[0] = ft_strdup(".");
+		if (!fallback[0])
+		{
+			free(fallback);
+			return (NULL);
+		}
+		return (search_in_dirs(fallback, cmd));
+	}
 	dirs = ft_split(path_env, ':');
 	if (!dirs)
 		return (NULL);

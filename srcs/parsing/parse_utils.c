@@ -18,36 +18,12 @@ bool	is_cmd_end(t_tok *tok)
 		return (true);
 	if (tok->type == TOK_END || tok->type == TOK_PIPE
 		|| tok->type == TOK_AND || tok->type == TOK_OR
+		|| tok->type == TOK_AMP || tok->type == TOK_SEMI
 		|| tok->type == TOK_RPAREN)
 		return (true);
+	if (tok->type == TOK_PIPE_AMP)
+		return (true);
 	return (false);
-}
-
-static const char	*tok_repr(t_tok *tok)
-{
-	if (!tok || tok->type == TOK_END)
-		return ("newline");
-	if (tok->type == TOK_PIPE)
-		return ("|");
-	if (tok->type == TOK_AND)
-		return ("&&");
-	if (tok->type == TOK_OR)
-		return ("||");
-	if (tok->type == TOK_LPAREN)
-		return ("(");
-	if (tok->type == TOK_RPAREN)
-		return (")");
-	if (tok->type == TOK_IN)
-		return ("<");
-	if (tok->type == TOK_OUT)
-		return (">");
-	if (tok->type == TOK_APP)
-		return (">>");
-	if (tok->type == TOK_HEREDOC)
-		return ("<<");
-	if (tok->type == TOK_WORD && tok->value)
-		return (tok->value);
-	return ("token");
 }
 
 void	syntax_err_tok(t_tok *tok)
@@ -61,32 +37,9 @@ void	syntax_err_tok(t_tok *tok)
 	ft_putstr_fd("'\n", STDERR_FILENO);
 }
 
-static size_t	av_len(char **av)
+static bool	av_set_word(char ***avp, char **tmp, size_t len,
+		const char *word)
 {
-	size_t	len;
-
-	len = 0;
-	if (!av)
-		return (0);
-	while (av[len])
-		len++;
-	return (len);
-}
-
-bool	av_push(char ***avp, const char *word)
-{
-	char	**tmp;
-	size_t	len;
-
-	if (!word)
-		return (false);
-	len = av_len(*avp);
-	tmp = realloc(*avp, sizeof(*tmp) * (len + 2));
-	if (!tmp)
-	{
-		perror("minishell: realloc");
-		return (false);
-	}
 	tmp[len] = ft_strdup(word);
 	if (!tmp[len])
 	{
@@ -97,4 +50,26 @@ bool	av_push(char ***avp, const char *word)
 	tmp[len + 1] = NULL;
 	*avp = tmp;
 	return (true);
+}
+
+bool	av_push(char ***avp, const char *word)
+{
+	char	**tmp;
+	size_t	len;
+
+	if (!word)
+		return (false);
+	len = 0;
+	if (*avp)
+	{
+		while ((*avp)[len])
+			len++;
+	}
+	tmp = realloc(*avp, sizeof(*tmp) * (len + 2));
+	if (!tmp)
+	{
+		perror("minishell: realloc");
+		return (false);
+	}
+	return (av_set_word(avp, tmp, len, word));
 }

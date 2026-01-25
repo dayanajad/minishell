@@ -41,7 +41,7 @@ int	exec_builtin(t_cmd *cmd, t_shell *shell)
 		return (1);
 	name = cmd->av[0];
 	if (ft_strcmp(name, "echo") == 0)
-		return (builtin_echo(cmd->av));
+		return (exec_builtin_echo(cmd, shell));
 	if (ft_strcmp(name, "cd") == 0)
 		return (builtin_cd(cmd->av, shell));
 	if (ft_strcmp(name, "pwd") == 0)

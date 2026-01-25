@@ -12,35 +12,6 @@
 
 #include "minishell.h"
 
-void	free_str_arr(char **arr)
-{
-	int	i;
-
-	if (!arr)
-		return ;
-	i = 0;
-	while (arr[i])
-	{
-		free(arr[i]);
-		i++;
-	}
-	free(arr);
-}
-
-void	free_env(t_env *env)
-{
-	t_env	*tmp;
-
-	while (env)
-	{
-		tmp = env;
-		env = env->next;
-		free(tmp->key);
-		free(tmp->value);
-		free(tmp);
-	}
-}
-
 void	free_redirs(t_redir *redirs)
 {
 	t_redir	*next;
@@ -88,4 +59,17 @@ void	free_ast(t_ast *ast)
 		free_ast(ast->u_data.branch.right);
 	}
 	free(ast);
+}
+
+void	free_tokens(t_tok *tokens)
+{
+	t_tok	*tmp;
+
+	while (tokens)
+	{
+		tmp = tokens;
+		tokens = tokens->next;
+		free(tmp->value);
+		free(tmp);
+	}
 }

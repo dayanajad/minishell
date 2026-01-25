@@ -12,6 +12,18 @@
 
 #include "minishell.h"
 
+static void	update_underscore_var(t_shell *shell, t_cmd *cmd)
+{
+	int	last;
+
+	if (!shell || !cmd || !cmd->av || !cmd->av[0])
+		return ;
+	last = 0;
+	while (cmd->av[last + 1])
+		last++;
+	export_set_env_var(&shell->env, "_", cmd->av[last]);
+}
+
 int	normalize_status(int status)
 {
 	if (WIFEXITED(status))
@@ -21,18 +33,58 @@ int	normalize_status(int status)
 	return (1);
 }
 
-void	exec_external_child(t_cmd *cmd, t_shell *shell)
+static void	check_direct_path(const char *path)
+{
+	struct stat	st;
+
+	if (stat(path, &st) < 0)
+	{
+		ft_putstr_fd("minishell: ", STDERR_FILENO);
+		perror(path);
+		exit(127);
+	}
+	if (S_ISDIR(st.st_mode))
+	{
+		ft_putstr_fd("minishell: ", STDERR_FILENO);
+		ft_putstr_fd(path, STDERR_FILENO);
+		ft_putstr_fd(": Is a directory\n", STDERR_FILENO);
+		exit(126);
+	}
+	if (access(path, X_OK) < 0)
+	{
+		ft_putstr_fd("minishell: ", STDERR_FILENO);
+		perror(path);
+		exit(126);
+	}
+}
+
+static char	*resolve_cmd_path(t_cmd *cmd, t_shell *shell)
 {
 	char	*path;
-	char	**envp;
 
 	path = find_in_path(cmd->av[0], shell->env);
 	if (!path)
 	{
-		ft_putstr_fd("minishell: ", STDERR_FILENO);
-		ft_putstr_fd(cmd->av[0], STDERR_FILENO);
-		ft_putstr_fd(": command not found\n", STDERR_FILENO);
+		exec_print_cmd_not_found(shell, cmd->av[0]);
 		exit(127);
+	}
+	if (ft_strchr(cmd->av[0], '/'))
+		check_direct_path(path);
+	return (path);
+}
+
+void	exec_external_child(t_cmd *cmd, t_shell *shell)
+{
+	char		*path;
+	char		**envp;
+	struct stat	st;
+
+	path = resolve_cmd_path(cmd, shell);
+	if (stat(path, &st) == 0 && S_ISDIR(st.st_mode))
+	{
+		exec_print_is_dir(shell, path);
+		free(path);
+		exit(126);
 	}
 	envp = env_to_arr(shell->env);
 	if (!envp)
@@ -41,17 +93,24 @@ void	exec_external_child(t_cmd *cmd, t_shell *shell)
 		exit(1);
 	}
 	execve(path, cmd->av, envp);
-	perror("minishell");
-	free(path);
-	free_str_arr(envp);
-	exit(126);
+	if (errno == ENOEXEC && access(path, X_OK) == 0)
+		exec_as_script(path, cmd, envp);
+	exec_error_exit(shell, path);
 }
 
 int	exec_external_cmd(t_cmd *cmd, t_shell *shell)
 {
 	pid_t	pid;
-	int		status;
 
+	if (shell && shell->in_child)
+	{
+		setup_signals_exec();
+		if (!apply_redirections(cmd->redirs, shell))
+			exit(1);
+		update_underscore_var(shell, cmd);
+		exec_external_child(cmd, shell);
+	}
+	update_underscore_var(shell, cmd);
 	pid = fork();
 	if (pid < 0)
 	{
@@ -60,17 +119,10 @@ int	exec_external_cmd(t_cmd *cmd, t_shell *shell)
 	}
 	if (pid == 0)
 	{
-		if (!apply_redirections(cmd->redirs))
+		setup_signals_exec();
+		if (!apply_redirections(cmd->redirs, shell))
 			exit(1);
 		exec_external_child(cmd, shell);
 	}
-	while (waitpid(pid, &status, 0) == -1)
-	{
-		if (errno != EINTR)
-		{
-			perror("minishell: waitpid");
-			return (1);
-		}
-	}
-	return (normalize_status(status));
+	return (exec_wait_for_child(pid));
 }

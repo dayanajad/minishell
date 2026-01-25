@@ -73,7 +73,8 @@ t_ast	*new_ast_subshell(t_ast *child)
 	return (node);
 }
 
-t_redir	*new_redir(t_redir_type type, const char *target)
+
+t_redir	*new_redir(t_redir_type type, int fd, const char *target)
 {
 	t_redir	*r;
 
@@ -84,6 +85,7 @@ t_redir	*new_redir(t_redir_type type, const char *target)
 		exit(EXIT_FAILURE);
 	}
 	r->type = type;
+	r->fd = fd;
 	r->target = ft_strdup(target);
 	if (!r->target)
 	{

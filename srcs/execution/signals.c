@@ -15,21 +15,29 @@
 void	handle_sigint(int sig)
 {
 	(void)sig;
-	g_signal = SIGINT;
+	set_signal(SIGINT);
 	write(STDOUT_FILENO, "\n", 1);
 	rl_on_new_line();
 	rl_replace_line("", 0);
 	rl_redisplay();
 }
 
+void	handle_sigpipe(int sig)
+{
+	(void)sig;
+	exit(128 + SIGPIPE);
+}
+
 void	setup_signals_interactive(void)
 {
 	signal(SIGINT, handle_sigint);
 	signal(SIGQUIT, SIG_IGN);
+	signal(SIGPIPE, SIG_IGN);
 }
 
 void	setup_signals_exec(void)
 {
 	signal(SIGINT, SIG_DFL);
 	signal(SIGQUIT, SIG_DFL);
+	signal(SIGPIPE, SIG_DFL);
 }

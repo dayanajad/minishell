@@ -25,6 +25,7 @@ int	exec_subshell_node(t_ast *ast, t_shell *shell)
 	}
 	if (pid == 0)
 	{
+		shell->in_child = 1;
 		setup_signals_exec();
 		exit(exec_ast(ast->u_data.child, shell));
 	}

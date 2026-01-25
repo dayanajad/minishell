@@ -12,6 +12,29 @@
 
 #include "minishell.h"
 
+static bool	is_all_digits(const char *s)
+{
+	int	i;
+
+	if (!s || !s[0])
+		return (false);
+	i = 0;
+	while (s[i])
+	{
+		if (!ft_isdigit((unsigned char)s[i]))
+			return (false);
+		i++;
+	}
+	return (true);
+}
+
+static int	default_redir_fd(t_redir_type type)
+{
+	if (type == R_IN || type == R_HEREDOC)
+		return (STDIN_FILENO);
+	return (STDOUT_FILENO);
+}
+
 static t_redir_type	redir_type_from_tok(t_tok_type type)
 {
 	if (type == TOK_IN)
@@ -23,10 +46,10 @@ static t_redir_type	redir_type_from_tok(t_tok_type type)
 	return (R_HEREDOC);
 }
 
-static bool	add_redir_target(t_tok **cur, t_redir_type type, t_redir **redirs)
+static bool	add_redir_target(t_tok **cur, t_redir_type type, int fd,
+		t_redir **redirs)
 {
 	t_tok		*target;
-	t_redir		*tmp;
 
 	target = *cur;
 	if (!target || target->type != TOK_WORD)
@@ -34,24 +57,26 @@ static bool	add_redir_target(t_tok **cur, t_redir_type type, t_redir **redirs)
 		syntax_err_tok(target);
 		return (false);
 	}
-	if (!*redirs)
-		*redirs = new_redir(type, target->value);
-	else
-	{
-		tmp = *redirs;
-		while (tmp->next)
-			tmp = tmp->next;
-		tmp->next = new_redir(type, target->value);
-	}
+	append_redir(redirs, new_redir(type, fd, target->value));
 	*cur = target->next;
 	return (true);
 }
 
-static bool	handle_heredoc_redir(t_tok **cur, t_redir **redirs, t_shell *shell)
+static char	*get_heredoc_delim(t_tok *target, bool *expand)
+{
+	*expand = !target->was_quoted;
+	if (!*expand)
+		return (target->value);
+	return (unescape_backslashes(target->value));
+}
+
+static bool	handle_heredoc_redir(t_tok **cur, t_redir **redirs,
+		t_shell *shell, int fd)
 {
 	t_tok	*target;
 	char	*temp_path;
-	t_redir	*tmp;
+	bool	expand;
+	char	*delimiter;
 
 	target = *cur;
 	if (!target || target->type != TOK_WORD)
@@ -59,18 +84,15 @@ static bool	handle_heredoc_redir(t_tok **cur, t_redir **redirs, t_shell *shell)
 		syntax_err_tok(target);
 		return (false);
 	}
-	temp_path = read_heredoc(target->value, shell);
+	delimiter = get_heredoc_delim(target, &expand);
+	if (!delimiter)
+		return (false);
+	temp_path = read_heredoc(delimiter, shell, expand);
+	if (expand)
+		free(delimiter);
 	if (!temp_path)
 		return (false);
-	if (!*redirs)
-		*redirs = new_redir(R_HEREDOC, temp_path);
-	else
-	{
-		tmp = *redirs;
-		while (tmp->next)
-			tmp = tmp->next;
-		tmp->next = new_redir(R_HEREDOC, temp_path);
-	}
+	append_redir(redirs, new_redir(R_HEREDOC, fd, temp_path));
 	free(temp_path);
 	*cur = target->next;
 	return (true);
@@ -80,14 +102,32 @@ bool	parse_one_redir(t_tok **cur, t_redir **redirs, t_shell *shell)
 {
 	t_tok			*op;
 	t_redir_type	type;
+	int				fd;
+	t_tok			*io;
 
+	fd = -1;
+	io = *cur;
+	if (io && io->type == TOK_WORD && io->next
+		&& is_all_digits(io->value)
+		&& (io->next->type == TOK_IN || io->next->type == TOK_OUT
+			|| io->next->type == TOK_APP || io->next->type == TOK_HEREDOC))
+	{
+		fd = ft_atoi(io->value);
+		*cur = io->next;
+	}
 	op = *cur;
 	if (!op || (op->type != TOK_IN && op->type != TOK_OUT
 			&& op->type != TOK_APP && op->type != TOK_HEREDOC))
+	{
+		if (fd != -1)
+			*cur = io;
 		return (false);
+	}
 	type = redir_type_from_tok(op->type);
+	if (fd == -1)
+		fd = default_redir_fd(type);
 	*cur = op->next;
 	if (type == R_HEREDOC)
-		return (handle_heredoc_redir(cur, redirs, shell));
-	return (add_redir_target(cur, type, redirs));
+		return (handle_heredoc_redir(cur, redirs, shell, fd));
+	return (add_redir_target(cur, type, fd, redirs));
 }

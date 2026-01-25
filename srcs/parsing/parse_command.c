@@ -19,13 +19,18 @@ static int	fill_simple_cmd(t_tok **cur, t_cmd *cmd, t_shell *shell)
 	tok = *cur;
 	while (tok && !is_cmd_end(tok))
 	{
+		if (parse_one_redir(cur, &cmd->redirs, shell))
+		{
+			tok = *cur;
+			continue ;
+		}
 		if (tok->type == TOK_WORD)
 		{
 			if (!av_push(&cmd->av, tok->value))
 				return (0);
 			*cur = tok->next;
 		}
-		else if (parse_one_redir(cur, &cmd->redirs, shell) == false)
+		else
 			return (0);
 		tok = *cur;
 	}

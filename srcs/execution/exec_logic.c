@@ -31,3 +31,9 @@ int	exec_or_node(t_ast *ast, t_shell *shell)
 		status = exec_ast(ast->u_data.branch.right, shell);
 	return (status);
 }
+
+int	exec_seq_node(t_ast *ast, t_shell *shell)
+{
+	exec_ast(ast->u_data.branch.left, shell);
+	return (exec_ast(ast->u_data.branch.right, shell));
+}

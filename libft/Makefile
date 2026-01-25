@@ -14,7 +14,8 @@ SRC = ft_isalpha.c ft_isdigit.c ft_isalnum.c ft_isascii.c ft_isprint.c \
 	  ft_lstnew.c ft_lstadd_front.c ft_lstsize.c ft_lstlast.c ft_lstadd_back.c \
 	  ft_lstdelone.c ft_lstclear.c ft_lstiter.c ft_lstmap.c \
 	  ft_printf.c print_utils1.c print_utils2.c ft_printf_utils.c \
-	  get_next_line_bonus.c get_next_line_utils_bonus.c
+	  get_next_line_bonus.c get_next_line_helpers_bonus.c \
+	  get_next_line_line_bonus.c get_next_line_utils_bonus.c
 
 OBJ = $(SRC:.c=.o)
 

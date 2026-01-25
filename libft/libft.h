@@ -57,8 +57,8 @@ char		*ft_itoa(int n);
 char		*ft_strmapi(char const *s, char (*f)(unsigned int, char));
 void		ft_striteri(char *s, void (*f)(unsigned int, char *));
 void		ft_putchar_fd(char c, int fd);
-void		ft_putstr_fd(char *s, int fd);
-void		ft_putendl_fd(char *s, int fd);
+void		ft_putstr_fd(const char *s, int fd);
+void		ft_putendl_fd(const char *s, int fd);
 void		ft_putnbr_fd(int n, int fd);
 
 // Bonus Part - Linked List
@@ -101,5 +101,9 @@ typedef struct s_fd_node
 
 char		*get_next_line(int fd);
 void		remove_fd_node(t_fd_node **head, int fd);
+int			stash_append(t_fd_node *n, char *b, t_fd_node **l, int fd);
+int			read_to_stash(int fd, t_fd_node *n, t_fd_node **l, char *b);
+char		*extract_line(char *stash);
+char		*update_stash(char *stash);
 
 #endif

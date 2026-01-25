@@ -33,79 +33,17 @@ static t_fd_node	*get_fd_node(t_fd_node **head, int fd)
 	return (cur);
 }
 
-static char	*extract_line(char *stash)
-{
-	char	*line;
-	size_t	i;
-
-	i = 0;
-	if (!stash || !(*stash))
-		return (NULL);
-	while (stash[i] && stash[i] != '\n')
-		i++;
-	line = malloc(i + (stash[i] == '\n') + 1);
-	if (!line)
-		return (NULL);
-	i = 0;
-	while (stash[i] && stash[i] != '\n')
-	{
-		line[i] = stash[i];
-		i++;
-	}
-	if (stash[i] == '\n')
-		line[i++] = '\n';
-	line[i] = '\0';
-	return (line);
-}
-
-static char	*update_stash(char *stash)
-{
-	char	*new;
-	size_t	i;
-	size_t	j;
-
-	i = 0;
-	j = 0;
-	if (!stash)
-		return (NULL);
-	while (stash[i] && stash[i] != '\n')
-		i++;
-	if (!stash[i])
-		return (free(stash), NULL);
-	new = malloc(ft_strlen(stash + i + 1) + 1);
-	if (!new)
-		return (free (stash), NULL);
-	i++;
-	while (stash[i])
-		new[j++] = stash[i++];
-	new[j] = '\0';
-	return (free (stash), new);
-}
-
 static int	read_and_stash(int fd, t_fd_node *node, t_fd_node **fd_list)
 {
 	char	*buffer;
-	char	*temp;
-	ssize_t	rd;
+	int		res;
 
 	buffer = malloc(BUFFER_SIZE + 1);
 	if (!buffer)
 		return (0);
-	rd = 1;
-	while (!(ft_strchr(node->stash, '\n')) && rd > 0)
-	{
-		rd = read(fd, buffer, BUFFER_SIZE);
-		if (rd <= 0)
-			break ;
-		buffer[rd] = '\0';
-		temp = ft_strjoin(node->stash, buffer);
-		if (!temp)
-			return (free(buffer), remove_fd_node(fd_list, fd), 0);
-		free(node->stash);
-		node->stash = temp;
-	}
-	free (buffer);
-	if (rd < 0 || !node->stash || !*(node->stash))
+	res = read_to_stash(fd, node, fd_list, buffer);
+	free(buffer);
+	if (res <= 0 || !node->stash || !*(node->stash))
 		return (remove_fd_node(fd_list, fd), 0);
 	return (1);
 }

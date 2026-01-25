@@ -12,67 +12,80 @@
 
 #include "minishell.h"
 
-static char	*create_temp_file(void)
+static char	*trim_nl(char *line)
 {
-	static int	counter = 0;
-	char		*num_str;
-	char		*temp_path;
-	char		*tmp;
+	size_t	len;
 
-	num_str = ft_itoa(counter++);
-	if (!num_str)
+	if (!line)
 		return (NULL);
-	tmp = ft_strjoin("/tmp/.minishell_heredoc_", num_str);
-	free(num_str);
-	if (!tmp)
-		return (NULL);
-	temp_path = ft_strjoin(tmp, "_XXXXXX");
-	free(tmp);
-	return (temp_path);
+	len = ft_strlen(line);
+	if (len > 0 && line[len - 1] == '\n')
+		line[len - 1] = '\0';
+	return (line);
 }
 
-static int	open_temp_file(char **path)
+static void	write_heredoc_line(int fd, char *line, t_shell *shell,
+		bool expand)
 {
-	int		fd;
-	char	*temp_template;
-
-	temp_template = create_temp_file();
-	if (!temp_template)
-		return (-1);
-	fd = mkstemp(temp_template);
-	if (fd < 0)
-	{
-		free(temp_template);
-		perror("minishell: mkstemp");
-		return (-1);
-	}
-	*path = temp_template;
-	return (fd);
-}
-
-char	*read_heredoc(const char *delimiter, t_shell *shell)
-{
-	int		fd;
-	char	*line;
 	char	*expanded;
+	char	*dup;
+
+	if (expand)
+	{
+		dup = ft_strdup(line);
+		if (!dup)
+			return ;
+		expanded = expand_str(dup, shell);
+	}
+	else
+		expanded = ft_strdup(line);
+	if (!expanded)
+		return ;
+	write(fd, expanded, ft_strlen(expanded));
+	write(fd, "\n", 1);
+	free(expanded);
+}
+
+static void	read_heredoc_loop(int fd, const char *delimiter, t_shell *shell,
+		bool expand)
+{
+	char	*line;
+	char	*raw;
+
+	while (1)
+	{
+		if (isatty(STDIN_FILENO))
+			raw = readline("> ");
+		else
+			raw = read_line_nobuf(STDIN_FILENO);
+		line = raw;
+		if (!line)
+		{
+			if (!shell->heredoc_eof)
+				warn_heredoc_eof(delimiter);
+			shell->heredoc_eof = 1;
+			break ;
+		}
+		trim_nl(line);
+		if (ft_strcmp(line, delimiter) == 0)
+		{
+			free(line);
+			break ;
+		}
+		write_heredoc_line(fd, line, shell, expand);
+		free(line);
+	}
+}
+
+char	*read_heredoc(const char *delimiter, t_shell *shell, bool expand)
+{
+	int		fd;
 	char	*temp_path;
 
 	fd = open_temp_file(&temp_path);
 	if (fd < 0)
 		return (NULL);
-	while (1)
-	{
-		line = readline("> ");
-		if (!line || ft_strcmp(line, delimiter) == 0)
-		{
-			free(line);
-			break ;
-		}
-		expanded = expand_str(line, shell);
-		write(fd, expanded, ft_strlen(expanded));
-		write(fd, "\n", 1);
-		free(expanded);
-	}
+	read_heredoc_loop(fd, delimiter, shell, expand);
 	close(fd);
 	return (temp_path);
 }

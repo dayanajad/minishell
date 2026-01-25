@@ -16,7 +16,7 @@ static char	*get_target_dir(char **av, t_env *env)
 {
 	char	*target;
 
-	if (!av[1] || ft_strcmp(av[1], "~") == 0)
+	if (!av[1] || ft_strcmp(av[1], "~") == 0 || ft_strcmp(av[1], "--") == 0)
 	{
 		target = get_env_value(env, "HOME");
 		if (!target)
@@ -79,7 +79,16 @@ int	builtin_cd(char **av, t_shell *shell)
 {
 	char	*target;
 	char	old_pwd[PATH_MAX];
+	char	*tmp_av[4];
 
+	if (av[1] && ft_strcmp(av[1], "--") == 0)
+	{
+		tmp_av[0] = av[0];
+		tmp_av[1] = av[2];
+		tmp_av[2] = av[3];
+		tmp_av[3] = NULL;
+		av = tmp_av;
+	}
 	if (av[1] && av[2])
 	{
 		ft_putstr_fd("minishell: cd: too many arguments\n", STDERR_FILENO);

@@ -14,23 +14,10 @@
 
 static bool	check_token_seq(t_tok *cur)
 {
-	if (cur->type == TOK_PIPE || cur->type == TOK_AND || cur->type == TOK_OR)
-	{
-		if (!cur->next || is_cmd_end(cur->next))
-		{
-			syntax_err_tok(cur->next);
-			return (false);
-		}
-	}
-	if (cur->type == TOK_IN || cur->type == TOK_OUT
-		|| cur->type == TOK_APP || cur->type == TOK_HEREDOC)
-	{
-		if (!cur->next || cur->next->type != TOK_WORD)
-		{
-			syntax_err_tok(cur->next);
-			return (false);
-		}
-	}
+	if (!check_op_seq(cur))
+		return (false);
+	if (!check_redir_seq(cur))
+		return (false);
 	return (true);
 }
 
@@ -40,7 +27,9 @@ bool	check_syntax(t_tok *tokens)
 
 	cur = tokens;
 	if (cur && (cur->type == TOK_PIPE
-			|| cur->type == TOK_AND || cur->type == TOK_OR))
+			|| cur->type == TOK_AND || cur->type == TOK_OR
+			|| cur->type == TOK_AMP || cur->type == TOK_PIPE_AMP
+			|| cur->type == TOK_SEMI))
 	{
 		syntax_err_tok(cur);
 		return (false);

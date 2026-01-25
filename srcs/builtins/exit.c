@@ -11,22 +11,60 @@
 /* ************************************************************************** */
 
 #include "minishell.h"
+#include <limits.h>
 
-static bool	is_numeric(const char *str)
+static bool	will_overflow(unsigned long long val, int sign, int digit)
+{
+	unsigned long long	limit;
+
+	if (sign == 1)
+		limit = (unsigned long long)LLONG_MAX;
+	else
+		limit = (unsigned long long)LLONG_MAX + 1;
+	if (val > limit / 10)
+		return (true);
+	if (val == limit / 10 && (unsigned long long)digit > limit % 10)
+		return (true);
+	return (false);
+}
+
+static int	skip_space_sign(const char *str, int *sign)
 {
 	int	i;
 
 	i = 0;
-	if (str[i] == '+' || str[i] == '-')
+	*sign = 1;
+	while (str[i] == ' ' || (str[i] >= 9 && str[i] <= 13))
 		i++;
+	if (str[i] == '-' || str[i] == '+')
+	{
+		if (str[i] == '-')
+			*sign = -1;
+		i++;
+	}
+	return (i);
+}
+
+static bool	atoll_check(const char *str, long long *res)
+{
+	unsigned long long	val;
+	int					sign;
+	int					i;
+
+	val = 0;
+	i = skip_space_sign(str, &sign);
 	if (!str[i])
 		return (false);
 	while (str[i])
 	{
 		if (!ft_isdigit(str[i]))
 			return (false);
+		if (will_overflow(val, sign, str[i] - '0'))
+			return (false);
+		val = val * 10 + (str[i] - '0');
 		i++;
 	}
+	*res = (long long)(val * sign);
 	return (true);
 }
 
@@ -39,34 +77,24 @@ static int	handle_non_numeric(char *arg, t_shell *shell)
 	return (2);
 }
 
-static int	calc_exit_code(char *arg)
-{
-	int	exit_code;
-
-	exit_code = ft_atoi(arg) % 256;
-	if (exit_code < 0)
-		exit_code += 256;
-	return (exit_code);
-}
-
 int	builtin_exit(char **av, t_shell *shell)
 {
-	int	exit_code;
+	long long	exit_val;
 
-	ft_putstr_fd("exit\n", STDERR_FILENO);
+	if (isatty(STDIN_FILENO))
+		ft_putstr_fd("exit\n", STDERR_FILENO);
 	if (!av[1])
 	{
 		shell->should_exit = 1;
 		return (shell->last_status);
 	}
+	if (!atoll_check(av[1], &exit_val))
+		return (handle_non_numeric(av[1], shell));
 	if (av[2])
 	{
 		ft_putstr_fd("minishell: exit: too many arguments\n", STDERR_FILENO);
 		return (1);
 	}
-	if (!is_numeric(av[1]))
-		return (handle_non_numeric(av[1], shell));
-	exit_code = calc_exit_code(av[1]);
 	shell->should_exit = 1;
-	return (exit_code);
+	return ((int)(exit_val % 256 + 256) % 256);
 }

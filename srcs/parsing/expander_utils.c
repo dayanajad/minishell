@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   expander_utils.c                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: antigravity <antigravity@google>           +#+  +:+       +#+        */
+/*   By: bpichyal <bpichyal@student.42kl.edu.my>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/01/18 15:52:00 by antigravity       #+#    #+#             */
-/*   Updated: 2026/01/18 15:52:00 by antigravity      ###   ########.fr       */
+/*   Created: 2026/01/25 02:16:35 by bpichyal          #+#    #+#             */
+/*   Updated: 2026/01/25 02:16:35 by bpichyal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
