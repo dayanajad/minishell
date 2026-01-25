@@ -42,48 +42,50 @@ t_ast	*parse_pipe(t_tok **cur, t_shell *shell)
 
 t_ast	*parse_and(t_tok **cur, t_shell *shell)
 {
-	t_ast	*left;
-	t_tok	*tok;
+	return (parse_or(cur, shell));
+}
+
+static t_ast	*parse_and_or_op(t_tok **cur, t_shell *shell, t_ast *left,
+		t_tok_type type)
+{
 	t_ast	*right;
+
+	*cur = (*cur)->next;
+	if (is_cmd_end(*cur))
+	{
+		syntax_err_tok(*cur);
+		free_ast(left);
+		return (NULL);
+	}
+	right = parse_pipe(cur, shell);
+	if (!right)
+		return (parse_err(left));
+	if (type == TOK_AND)
+		return (new_ast_bin(A_AND, left, right));
+	return (new_ast_bin(A_OR, left, right));
+}
+
+t_ast	*parse_or(t_tok **cur, t_shell *shell)
+{
+	t_ast		*left;
+	t_tok		*tok;
+	t_tok_type	type;
 
 	left = parse_pipe(cur, shell);
 	if (!left)
 		return (NULL);
 	tok = *cur;
-	while (tok && tok->type == TOK_AND)
+	while (tok && (tok->type == TOK_OR || tok->type == TOK_AND
+			|| tok->type == TOK_AMP))
 	{
-		*cur = tok->next;
-		if (is_cmd_end(*cur))
+		type = tok->type;
+		if (type == TOK_AMP)
 		{
-			syntax_err_tok(*cur);
-			free_ast(left);
-			return (NULL);
-		}
-		right = parse_pipe(cur, shell);
-		if (!right)
-			return (parse_err(left));
-		left = new_ast_bin(A_AND, left, right);
-		tok = *cur;
-	}
-	return (left);
-}
-
-t_ast	*parse_or(t_tok **cur, t_shell *shell)
-{
-	t_ast	*left;
-	t_tok	*tok;
-
-	left = parse_and(cur, shell);
-	if (!left)
-		return (NULL);
-	tok = *cur;
-	while (tok && (tok->type == TOK_OR || tok->type == TOK_AMP))
-	{
-		*cur = tok->next;
-		if (tok->type == TOK_OR)
-			left = parse_or_token(cur, shell, left);
-		else
+			*cur = tok->next;
 			left = parse_amp_token(cur, shell, left);
+		}
+		else
+			left = parse_and_or_op(cur, shell, left, type);
 		if (!left)
 			return (NULL);
 		tok = *cur;

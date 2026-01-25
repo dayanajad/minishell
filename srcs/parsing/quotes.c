@@ -62,7 +62,7 @@ void	remove_quotes(t_tok *tokens)
 	cur = tokens;
 	while (cur)
 	{
-		if (cur->type == TOK_WORD)
+		if (cur->type == TOK_WORD && !cur->from_glob)
 		{
 			cur->value = strip_quotes(cur->value);
 		}

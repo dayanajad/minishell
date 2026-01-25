@@ -42,6 +42,7 @@ void	free_cmd(t_cmd *cmd)
 		free(cmd->av);
 	}
 	free_redirs(cmd->redirs);
+	free_tokens(cmd->raw_toks);
 	free(cmd);
 }
 

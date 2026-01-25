@@ -35,7 +35,7 @@ static void	write_heredoc_line(int fd, char *line, t_shell *shell,
 		dup = ft_strdup(line);
 		if (!dup)
 			return ;
-		expanded = expand_str(dup, shell);
+		expanded = expand_heredoc_str(dup, shell);
 	}
 	else
 		expanded = ft_strdup(line);

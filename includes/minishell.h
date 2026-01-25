@@ -66,6 +66,7 @@ typedef struct s_tok
 	bool			was_quoted;
 	int				pos;
 	bool			join_next;
+	bool			from_glob;
 	struct s_tok	*next;
 }	t_tok;
 
@@ -91,6 +92,7 @@ typedef struct s_cmd
 {
 	char	**av;
 	t_redir	*redirs;
+	t_tok	*raw_toks;
 }	t_cmd;
 
 // ABSTRACT SYNTAX TREE (AST)
@@ -184,7 +186,6 @@ void	setup_stdout_nul_filter(t_shell *shell);
 int		is_blank_line(const char *line);
 void	sanitize_line(char *line);
 char	*read_input_line(t_shell *shell);
-void	maybe_print_noninteractive_prompt(char *line);
 void	process_line(char *line, t_shell *shell);
 void	finalize_shell(t_shell *shell);
 int		run_shell(t_shell *shell);
@@ -421,6 +422,7 @@ char	*expand_str(char *s, t_shell *shell);
 
 char	*expand_var(char *s, int *i, t_shell *shell);
 char	*get_next_chunk(char *s, int *i, t_shell *shell, bool sq, bool dq);
+char	*expand_heredoc_str(char *s, t_shell *shell);
 
 // srcs/parsing/wildcards.c
 void	expand_wildcards(t_tok **tokens);

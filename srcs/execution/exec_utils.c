@@ -70,6 +70,13 @@ static char	*resolve_cmd_path(t_cmd *cmd, t_shell *shell)
 	}
 	if (ft_strchr(cmd->av[0], '/'))
 		check_direct_path(path);
+	else if (access(path, X_OK) < 0)
+	{
+		ft_putstr_fd("minishell: ", STDERR_FILENO);
+		perror(path);
+		free(path);
+		exit(126);
+	}
 	return (path);
 }
 
@@ -102,14 +109,6 @@ int	exec_external_cmd(t_cmd *cmd, t_shell *shell)
 {
 	pid_t	pid;
 
-	if (shell && shell->in_child)
-	{
-		setup_signals_exec();
-		if (!apply_redirections(cmd->redirs, shell))
-			exit(1);
-		update_underscore_var(shell, cmd);
-		exec_external_child(cmd, shell);
-	}
 	update_underscore_var(shell, cmd);
 	pid = fork();
 	if (pid < 0)

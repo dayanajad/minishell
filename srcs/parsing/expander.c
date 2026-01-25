@@ -243,6 +243,8 @@ void	expand_tokens(t_tok **tokens, t_shell *shell)
 				 cur->value = expand_str(cur->value, shell);
 			else
 				cur->value = expand_str(cur->value, shell);
+			if (!cur->was_quoted)
+				cur->has_wildcard = word_has_wildcard(cur->value);
 		}
 		prev = cur;
 		cur = next;

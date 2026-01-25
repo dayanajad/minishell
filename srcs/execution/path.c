@@ -25,29 +25,36 @@ static char	*build_path(char *dir, char *cmd)
 	return (path);
 }
 
-static char	*search_in_dirs(char **dirs, char *cmd)
+static char	*search_in_dirs(char **dirs, char *cmd, bool is_fallback)
 {
 	char		*path;
+	char		*found_noexec;
 	int			i;
 	struct stat	st;
 
+	found_noexec = NULL;
 	i = 0;
 	while (dirs[i])
 	{
 		path = build_path(dirs[i], cmd);
 		if (!path)
-			return (NULL);
-		if (access(path, X_OK) == 0 && stat(path, &st) == 0
-			&& !S_ISDIR(st.st_mode))
+			return (found_noexec);
+		if (stat(path, &st) == 0 && !S_ISDIR(st.st_mode))
 		{
-			free_str_arr(dirs);
-			return (path);
+			if (access(path, X_OK) == 0)
+			{
+				free_str_arr(dirs);
+				free(found_noexec);
+				return (path);
+			}
+			if (is_fallback && !found_noexec)
+				found_noexec = ft_strdup(path);
 		}
 		free(path);
 		i++;
 	}
 	free_str_arr(dirs);
-	return (NULL);
+	return (found_noexec);
 }
 
 char	*find_in_path(char *cmd, t_env *env)
@@ -74,10 +81,10 @@ char	*find_in_path(char *cmd, t_env *env)
 			free(fallback);
 			return (NULL);
 		}
-		return (search_in_dirs(fallback, cmd));
+		return (search_in_dirs(fallback, cmd, true));
 	}
 	dirs = ft_split(path_env, ':');
 	if (!dirs)
 		return (NULL);
-	return (search_in_dirs(dirs, cmd));
+	return (search_in_dirs(dirs, cmd, false));
 }

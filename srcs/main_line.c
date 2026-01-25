@@ -111,8 +111,3 @@ char	*read_input_line(t_shell *shell)
 	}
 	return (line);
 }
-
-void	maybe_print_noninteractive_prompt(char *line)
-{
-	(void)line;
-}

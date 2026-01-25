@@ -12,10 +12,48 @@
 
 #include "minishell.h"
 
+static int	scan_ansi_c_quote(char *s, int i)
+{
+	i += 2;
+	while (s[i] && s[i] != '\'')
+	{
+		if (s[i] == '\\' && s[i + 1])
+			i++;
+		i++;
+	}
+	if (s[i] == '\'')
+		i++;
+	return (i);
+}
+
+static int	scan_locale_quote(char *s, int i)
+{
+	i += 2;
+	while (s[i] && s[i] != '"')
+	{
+		if (s[i] == '\\' && s[i + 1])
+			i++;
+		i++;
+	}
+	if (s[i] == '"')
+		i++;
+	return (i);
+}
+
 static int	scan_word(char *s, int i, bool *has_wildcard, bool *was_quoted)
 {
 	char	quote;
 
+	if (s[i] == '$' && s[i + 1] == '\'')
+	{
+		*was_quoted = true;
+		return (scan_ansi_c_quote(s, i));
+	}
+	if (s[i] == '$' && s[i + 1] == '"')
+	{
+		*was_quoted = true;
+		return (scan_locale_quote(s, i));
+	}
 	if (s[i] == '\'' || s[i] == '"')
 	{
 		*was_quoted = true;
@@ -31,6 +69,8 @@ static int	scan_word(char *s, int i, bool *has_wildcard, bool *was_quoted)
 		while (s[i])
 		{
 			if (is_meta(s[i]))
+				break ;
+			if (s[i] == '$' && (s[i + 1] == '\'' || s[i + 1] == '"'))
 				break ;
 			if (s[i] == '\'' || s[i] == '"')
 				break ;

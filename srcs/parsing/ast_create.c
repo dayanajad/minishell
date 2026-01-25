@@ -24,6 +24,7 @@ t_cmd	*new_cmd(void)
 	}
 	cmd->av = NULL;
 	cmd->redirs = NULL;
+	cmd->raw_toks = NULL;
 	return (cmd);
 }
 

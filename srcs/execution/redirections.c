@@ -85,9 +85,9 @@ static int	open_redir_fd(t_redir *r, t_shell *shell)
 	if (r->type == R_IN)
 		fd = open(target, O_RDONLY);
 	else if (r->type == R_OUT)
-		fd = open(target, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+		fd = open(target, O_WRONLY | O_CREAT | O_TRUNC, 0666);
 	else if (r->type == R_APP)
-		fd = open(target, O_WRONLY | O_CREAT | O_APPEND, 0644);
+		fd = open(target, O_WRONLY | O_CREAT | O_APPEND, 0666);
 	else if (r->type == R_HEREDOC)
 		fd = open(target, O_RDONLY);
 	if (ft_strchr(r->target, '*') && r->type != R_HEREDOC)

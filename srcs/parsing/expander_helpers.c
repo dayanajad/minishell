@@ -205,3 +205,33 @@ char	*get_next_chunk(char *s, int *i, t_shell *shell, bool sq, bool dq)
 		return (expand_var(s, i, shell));
 	return (process_char(s[(*i)++]));
 }
+
+char	*expand_heredoc_str(char *s, t_shell *shell)
+{
+	char	*res;
+	char	*val;
+	int		i;
+
+	if (!s)
+		return (NULL);
+	res = ft_strdup("");
+	i = 0;
+	while (s[i])
+	{
+		if (s[i] == '$' && (ft_isalnum(s[i + 1])
+				|| s[i + 1] == '_' || s[i + 1] == '?'))
+		{
+			val = expand_var(s, &i, shell);
+			res = append_val(res, val);
+			free(val);
+		}
+		else
+		{
+			val = process_char(s[i++]);
+			res = append_val(res, val);
+			free(val);
+		}
+	}
+	free(s);
+	return (res);
+}

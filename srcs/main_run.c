@@ -28,7 +28,6 @@ int	run_shell(t_shell *shell)
 				printf("exit\n");
 			break ;
 		}
-		maybe_print_noninteractive_prompt(line);
 		if (get_signal() == SIGINT)
 			shell->last_status = 130;
 		process_line(line, shell);
