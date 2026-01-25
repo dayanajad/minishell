@@ -12,7 +12,7 @@
 
 #include "minishell.h"
 
-t_tok	*new_tok(t_tok_type type, char *value)
+t_tok	*new_tok(t_tok_type type, char *value, int pos)
 {
 	t_tok	*tok;
 
@@ -23,7 +23,8 @@ t_tok	*new_tok(t_tok_type type, char *value)
 	tok->value = value;
 	tok->has_wildcard = false;
 	tok->was_quoted = false;
-	tok->pos = 0;
+	tok->pos = pos;
+	tok->join_next = false;
 	tok->next = NULL;
 	return (tok);
 }

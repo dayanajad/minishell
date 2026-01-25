@@ -109,6 +109,7 @@ bool	parse_one_redir(t_tok **cur, t_redir **redirs, t_shell *shell)
 	io = *cur;
 	if (io && io->type == TOK_WORD && io->next
 		&& is_all_digits(io->value)
+		&& (io->pos + (int)ft_strlen(io->value) == io->next->pos)
 		&& (io->next->type == TOK_IN || io->next->type == TOK_OUT
 			|| io->next->type == TOK_APP || io->next->type == TOK_HEREDOC))
 	{

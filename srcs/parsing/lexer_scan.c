@@ -6,7 +6,7 @@
 /*   By: bpichyal <bpichyal@student.42kl.edu.my>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/25 12:10:00 by dbinti-m          #+#    #+#             */
-/*   Updated: 2026/01/25 03:05:57 by bpichyal         ###   ########.fr       */
+/*   Updated: 2026/01/25 18:44:40 by bpichyal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,14 +34,24 @@ int	scan_to_comment_or_eof(char *s, char *quote)
 t_tok	*lex_tokens(char *s)
 {
 	t_tok	*list;
+	t_tok	*last;
 	int		i;
+	int		start_i;
 
 	list = NULL;
 	i = 0;
 	while (s[i])
 	{
+		start_i = i;
 		while (s[i] && ft_strchr(" \t\n", s[i]))
 			i++;
+		if (list && i == start_i)
+		{
+			last = list;
+			while (last->next)
+				last = last->next;
+			last->join_next = true;
+		}
 		if (!s[i])
 			break ;
 		if (s[i] == '#' && (i == 0 || ft_strchr(" \t", s[i - 1])))
@@ -51,6 +61,6 @@ t_tok	*lex_tokens(char *s)
 		else
 			i = lex_word(s, i, &list);
 	}
-	tok_add(&list, new_tok(TOK_END, NULL));
+	tok_add(&list, new_tok(TOK_END, NULL, i));
 	return (list);
 }

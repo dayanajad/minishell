@@ -6,7 +6,7 @@
 /*   By: bpichyal <bpichyal@student.42kl.edu.my>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/25 12:10:00 by dbinti-m          #+#    #+#             */
-/*   Updated: 2026/01/25 03:05:57 by bpichyal         ###   ########.fr       */
+/*   Updated: 2026/01/25 18:44:40 by bpichyal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,6 +24,8 @@ static void	init_pwd_and_shlvl(t_shell *shell)
 		if (getcwd(cwd, sizeof(cwd)) != NULL)
 			export_set_env_var(&shell->env, "PWD", cwd);
 	}
+	if (!export_find_env_node(shell->env, "OLDPWD"))
+		export_set_env_var(&shell->env, "OLDPWD", NULL);
 	val = get_env_value(shell->env, "SHLVL");
 	if (!val || val[0] == '\0')
 		lvl = 0;

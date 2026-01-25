@@ -6,7 +6,7 @@
 /*   By: bpichyal <bpichyal@student.42kl.edu.my>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/25 12:10:00 by dbinti-m          #+#    #+#             */
-/*   Updated: 2026/01/25 03:05:57 by bpichyal         ###   ########.fr       */
+/*   Updated: 2026/01/25 18:44:40 by bpichyal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,21 +16,24 @@ static int	scan_word(char *s, int i, bool *has_wildcard, bool *was_quoted)
 {
 	char	quote;
 
-	while (s[i])
+	if (s[i] == '\'' || s[i] == '"')
 	{
-		if (is_meta(s[i]))
-			break ;
-		if (s[i] == '\'' || s[i] == '"')
+		*was_quoted = true;
+		quote = s[i++];
+		while (s[i] && s[i] != quote)
+			i++;
+		if (s[i])
+			i++;
+	}
+	else
+	{
+		*was_quoted = false;
+		while (s[i])
 		{
-			*was_quoted = true;
-			quote = s[i++];
-			while (s[i] && s[i] != quote)
-				i++;
-			if (s[i])
-				i++;
-		}
-		else
-		{
+			if (is_meta(s[i]))
+				break ;
+			if (s[i] == '\'' || s[i] == '"')
+				break ;
 			if (s[i] == '*')
 				*has_wildcard = true;
 			i++;
@@ -50,7 +53,7 @@ int	lex_word(char *s, int i, t_tok **list)
 	has_wildcard = false;
 	was_quoted = false;
 	i = scan_word(s, i, &has_wildcard, &was_quoted);
-	tok = new_tok(TOK_WORD, ft_substr(s, start, i - start));
+	tok = new_tok(TOK_WORD, ft_substr(s, start, i - start), start);
 	tok->has_wildcard = has_wildcard;
 	tok->was_quoted = was_quoted;
 	tok_add(list, tok);

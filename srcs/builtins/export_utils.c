@@ -6,7 +6,7 @@
 /*   By: bpichyal <bpichyal@student.42kl.edu.my>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/25 12:00:00 by dbinti-m          #+#    #+#             */
-/*   Updated: 2026/01/25 03:05:57 by bpichyal         ###   ########.fr       */
+/*   Updated: 2026/01/25 18:44:40 by bpichyal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,11 +47,15 @@ static t_env	*create_env_node(const char *key, const char *value)
 	if (!new)
 		return (NULL);
 	new->key = ft_strdup(key);
-	new->value = ft_strdup(value);
-	if (!new->key || !new->value)
+	if (value)
+		new->value = ft_strdup(value);
+	else
+		new->value = NULL;
+	if (!new->key || (value && !new->value))
 	{
 		free(new->key);
-		free(new->value);
+		if (new->value)
+			free(new->value);
 		free(new);
 		return (NULL);
 	}
@@ -67,8 +71,12 @@ void	export_set_env_var(t_env **env, char *key, char *value)
 	node = export_find_env_node(*env, key);
 	if (node)
 	{
-		free(node->value);
-		node->value = ft_strdup(value);
+		if (node->value)
+			free(node->value);
+		if (value)
+			node->value = ft_strdup(value);
+		else
+			node->value = NULL;
 	}
 	else
 	{

@@ -78,19 +78,22 @@ static void	print_export_one(const t_env *env)
 
 	if (!env || !env->key)
 		return ;
-	if (!env->value)
+	ft_putstr_fd("declare -x ", 1);
+	ft_putstr_fd(env->key, 1);
+	if (env->value)
 	{
-		printf("declare -x %s\n", env->key);
-		return ;
+		ft_putstr_fd("=\"", 1);
+		escaped = escape_export_value(env->value);
+		if (escaped)
+		{
+			ft_putstr_fd(escaped, 1);
+			free(escaped);
+		}
+		else
+			ft_putstr_fd(env->value, 1);
+		ft_putstr_fd("\"", 1);
 	}
-	escaped = escape_export_value(env->value);
-	if (!escaped)
-		printf("declare -x %s=\"%s\"\n", env->key, env->value);
-	else
-	{
-		printf("declare -x %s=\"%s\"\n", env->key, escaped);
-		free(escaped);
-	}
+	ft_putstr_fd("\n", 1);
 }
 
 static void	print_export(t_env *env)
@@ -113,7 +116,8 @@ static void	print_export(t_env *env)
 	i = 0;
 	while (i < count)
 	{
-		print_export_one(arr[i]);
+		if (ft_strcmp(arr[i]->key, "_") != 0)
+			print_export_one(arr[i]);
 		i++;
 	}
 	free(arr);

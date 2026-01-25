@@ -65,6 +65,7 @@ typedef struct s_tok
 	bool			has_wildcard;
 	bool			was_quoted;
 	int				pos;
+	bool			join_next;
 	struct s_tok	*next;
 }	t_tok;
 
@@ -383,7 +384,7 @@ int		builtin_unset(char **av, t_env **env);
 int		builtin_exit(char **av, t_shell *shell);
 
 // srcs/parsing/lexer_utils.c
-t_tok	*new_tok(t_tok_type type, char *value);
+t_tok	*new_tok(t_tok_type type, char *value, int pos);
 void	tok_add(t_tok **head, t_tok *new);
 int		is_meta(char c);
 

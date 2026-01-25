@@ -41,3 +41,46 @@ char	*process_char(char c)
 	str[1] = '\0';
 	return (ft_strdup(str));
 }
+
+char	*whitespace_to_space(const char *s)
+{
+	char	*tmp;
+	int		i;
+
+	if (!s)
+		return (NULL);
+	tmp = ft_strdup(s);
+	if (!tmp)
+		return (NULL);
+	i = 0;
+	while (tmp[i])
+	{
+		if (tmp[i] == '\t' || tmp[i] == '\n')
+			tmp[i] = ' ';
+		i++;
+	}
+	return (tmp);
+}
+
+bool	has_ifs_space(const char *s)
+{
+	int	i;
+
+	if (!s)
+		return (false);
+	i = 0;
+	while (s[i])
+	{
+		if (s[i] == ' ' || s[i] == '\t' || s[i] == '\n')
+			return (true);
+		i++;
+	}
+	return (false);
+}
+
+bool	word_has_wildcard(const char *s)
+{
+	if (!s)
+		return (false);
+	return (ft_strchr(s, '*') != NULL);
+}

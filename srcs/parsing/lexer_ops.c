@@ -6,7 +6,7 @@
 /*   By: bpichyal <bpichyal@student.42kl.edu.my>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/25 12:10:00 by dbinti-m          #+#    #+#             */
-/*   Updated: 2026/01/25 03:05:57 by bpichyal         ###   ########.fr       */
+/*   Updated: 2026/01/25 18:44:40 by bpichyal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,25 +18,25 @@ int	lex_redir_op(char *s, int i, t_tok **list)
 	{
 		if (s[i + 1] == '<')
 		{
-			tok_add(list, new_tok(TOK_HEREDOC, NULL));
+			tok_add(list, new_tok(TOK_HEREDOC, NULL, i));
 			return (i + 2);
 		}
-		tok_add(list, new_tok(TOK_IN, NULL));
+		tok_add(list, new_tok(TOK_IN, NULL, i));
 		return (i + 1);
 	}
 	if (s[i] == '>')
 	{
 		if (s[i + 1] == '|')
 		{
-			tok_add(list, new_tok(TOK_OUT, NULL));
+			tok_add(list, new_tok(TOK_OUT, NULL, i));
 			return (i + 2);
 		}
 		if (s[i + 1] == '>')
 		{
-			tok_add(list, new_tok(TOK_APP, NULL));
+			tok_add(list, new_tok(TOK_APP, NULL, i));
 			return (i + 2);
 		}
-		tok_add(list, new_tok(TOK_OUT, NULL));
+		tok_add(list, new_tok(TOK_OUT, NULL, i));
 		return (i + 1);
 	}
 	return (i);
@@ -46,17 +46,17 @@ int	lex_misc_op(char *s, int i, t_tok **list)
 {
 	if (s[i] == '(')
 	{
-		tok_add(list, new_tok(TOK_LPAREN, NULL));
+		tok_add(list, new_tok(TOK_LPAREN, NULL, i));
 		return (i + 1);
 	}
 	if (s[i] == ')')
 	{
-		tok_add(list, new_tok(TOK_RPAREN, NULL));
+		tok_add(list, new_tok(TOK_RPAREN, NULL, i));
 		return (i + 1);
 	}
 	if (s[i] == ';')
 	{
-		tok_add(list, new_tok(TOK_SEMI, NULL));
+		tok_add(list, new_tok(TOK_SEMI, NULL, i));
 		return (i + 1);
 	}
 	return (i + 1);
@@ -66,15 +66,15 @@ static int	lex_pipe_op(char *s, int i, t_tok **list)
 {
 	if (s[i + 1] == '&')
 	{
-		tok_add(list, new_tok(TOK_PIPE_AMP, NULL));
+		tok_add(list, new_tok(TOK_PIPE_AMP, NULL, i));
 		return (i + 2);
 	}
 	if (s[i + 1] == '|')
 	{
-		tok_add(list, new_tok(TOK_OR, NULL));
+		tok_add(list, new_tok(TOK_OR, NULL, i));
 		return (i + 2);
 	}
-	tok_add(list, new_tok(TOK_PIPE, NULL));
+	tok_add(list, new_tok(TOK_PIPE, NULL, i));
 	return (i + 1);
 }
 
@@ -82,10 +82,10 @@ static int	lex_amp_op(char *s, int i, t_tok **list)
 {
 	if (s[i + 1] == '&')
 	{
-		tok_add(list, new_tok(TOK_AND, NULL));
+		tok_add(list, new_tok(TOK_AND, NULL, i));
 		return (i + 2);
 	}
-	tok_add(list, new_tok(TOK_AMP, NULL));
+	tok_add(list, new_tok(TOK_AMP, NULL, i));
 	return (i + 1);
 }
 

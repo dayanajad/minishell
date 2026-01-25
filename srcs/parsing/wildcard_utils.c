@@ -6,7 +6,7 @@
 /*   By: bpichyal <bpichyal@student.42kl.edu.my>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/25 12:10:00 by dbinti-m          #+#    #+#             */
-/*   Updated: 2026/01/25 03:05:57 by bpichyal         ###   ########.fr       */
+/*   Updated: 2026/01/25 18:44:40 by bpichyal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -106,7 +106,7 @@ void	insert_matches(t_tok **cur, char **matches)
 	i = 1;
 	while (matches[i])
 	{
-		new = new_tok(TOK_WORD, ft_strdup(matches[i]));
+		new = new_tok(TOK_WORD, ft_strdup(matches[i]), 0);
 		new->next = next;
 		(*cur)->next = new;
 		*cur = new;
