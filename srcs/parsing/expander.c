@@ -12,10 +12,6 @@
 
 #include "minishell.h"
 
-void	expand_toks_loop(t_tok **tokens, t_shell *shell);
-void	split_and_clean_toks(t_tok **tokens, t_shell *shell);
-void	join_tokens(t_tok **tokens);
-
 char	*expand_str(char *s, t_shell *shell)
 {
 	char		*res;

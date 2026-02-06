@@ -12,8 +12,6 @@
 
 #include "minishell.h"
 
-t_tok	*perform_split_tok(t_tok **tokens, t_tok *prev, t_tok *cur);
-
 static bool	has_ifs_space(const char *s)
 {
 	int	i;

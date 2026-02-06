@@ -12,9 +12,6 @@
 
 #include "minishell.h"
 
-int	scan_ansi_c_quote(char *s, int i);
-int	scan_locale_quote(char *s, int i);
-
 static int	scan_quoted(char *s, int i, bool *was_quoted)
 {
 	char	quote;

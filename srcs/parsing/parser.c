@@ -12,8 +12,6 @@
 
 #include "minishell.h"
 
-t_ast	*parse_seq(t_tok **cur, t_shell *shell);
-
 t_ast	*parse_pipe(t_tok **cur, t_shell *shell)
 {
 	t_ast	*left;

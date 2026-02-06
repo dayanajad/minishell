@@ -12,8 +12,6 @@
 
 #include "minishell.h"
 
-char	*resolve_cmd_path(t_cmd *cmd, t_shell *shell);
-
 static void	update_underscore_var(t_shell *shell, t_cmd *cmd)
 {
 	int	last;

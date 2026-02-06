@@ -12,11 +12,6 @@
 
 #include "minishell.h"
 
-char	*whitespace_to_space(const char *s);
-t_tok	*handle_empty_split(char **parts, t_tok **tokens, t_tok *prev,
-			t_tok *next_tok);
-t_tok	*make_split_tok(char *word);
-
 static t_tok	*build_split_list(char **parts, t_tok **tokens, t_tok *prev)
 {
 	t_tok	*last;

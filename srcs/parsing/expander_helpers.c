@@ -12,9 +12,6 @@
 
 #include "minishell.h"
 
-char	*expand_ansi_c_quote(char *s, int *i);
-char	*process_backslashes(char *s, int *i, bool sq, bool dq);
-
 char	*expand_var(char *s, int *i, t_shell *shell)
 {
 	int		len;

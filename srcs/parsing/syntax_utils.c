@@ -12,9 +12,6 @@
 
 #include "minishell.h"
 
-bool	check_semi_seq(t_tok *cur);
-bool	check_op_end(t_tok *cur);
-
 bool	is_op_token(t_tok_type type)
 {
 	return (type == TOK_PIPE || type == TOK_AND || type == TOK_OR

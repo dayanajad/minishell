@@ -12,9 +12,6 @@
 
 #include "minishell.h"
 
-int		export_cmp_keys(const void *a, const void *b);
-int		export_env_count(t_env *env);
-
 static int	count_escaped_len(const char *s)
 {
 	int	len;

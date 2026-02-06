@@ -12,10 +12,6 @@
 
 #include "minishell.h"
 
-bool			handle_heredoc_redir(t_tok **cur, t_redir **redirs,
-					t_shell *shell, int fd);
-bool			is_all_digits(const char *s);
-
 static t_redir_type	redir_type_from_tok(t_tok_type type)
 {
 	if (type == TOK_IN)

@@ -50,6 +50,7 @@ SRCS        := srcs/main.c \
                srcs/execution/path.c \
                srcs/execution/redir_utils.c \
                srcs/execution/redirections.c \
+               srcs/execution/signal_readline.c \
                srcs/execution/signal_state.c \
                srcs/execution/signals.c \
                srcs/parsing/ast_create.c \

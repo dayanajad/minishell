@@ -12,10 +12,6 @@
 
 #include "minishell.h"
 
-int		export_apply(char *arg, char *key, char *value, t_env **env);
-int		export_apply_append(char *arg, char *key, char *val, t_env **env);
-void	print_export(t_env *env);
-
 static void	parse_export_arg(char *arg, char **key, char **value, bool *append)
 {
 	char	*equal;

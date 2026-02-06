@@ -12,9 +12,6 @@
 
 #include "minishell.h"
 
-int	lex_pipe_op(char *s, int i, t_tok **list);
-int	lex_amp_op(char *s, int i, t_tok **list);
-
 static int	lex_input_redir(char *s, int i, t_tok **list)
 {
 	if (s[i + 1] == '<')

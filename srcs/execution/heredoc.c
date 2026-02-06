@@ -12,9 +12,6 @@
 
 #include "minishell.h"
 
-void	write_heredoc_line(int fd, char *line, t_shell *shell, bool expand);
-char	*read_heredoc_raw(void);
-
 static char	*trim_nl(char *line)
 {
 	size_t	len;

@@ -12,10 +12,6 @@
 
 #include "minishell.h"
 
-char	get_open_quote(char *line);
-char	*join_piece(char *acc, char *piece, bool insert_newline);
-char	*handle_multiline_eof(char *line, char quote);
-
 int	is_blank_line(const char *line)
 {
 	int	i;
@@ -37,6 +33,8 @@ void	sanitize_line(char *line)
 
 static char	*get_first_line(t_shell *shell, bool interactive)
 {
+	char	*line;
+
 	if (interactive)
 	{
 		if (shell && shell->noninteractive_prompt_newline)
@@ -44,7 +42,10 @@ static char	*get_first_line(t_shell *shell, bool interactive)
 			write(STDOUT_FILENO, "\n", 1);
 			shell->noninteractive_prompt_newline = 0;
 		}
-		return (readline("minishell$ "));
+		set_readline_active(1);
+		line = readline("minishell$ ");
+		set_readline_active(0);
+		return (line);
 	}
 	if (shell)
 		shell->noninteractive_prompt_newline = 0;
@@ -53,8 +54,15 @@ static char	*get_first_line(t_shell *shell, bool interactive)
 
 static char	*read_next_piece(bool interactive)
 {
+	char	*line;
+
 	if (interactive)
-		return (readline("> "));
+	{
+		set_readline_active(1);
+		line = readline("> ");
+		set_readline_active(0);
+		return (line);
+	}
 	return (read_line_nobuf(STDIN_FILENO));
 }
 

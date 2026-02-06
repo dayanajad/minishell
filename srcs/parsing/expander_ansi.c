@@ -12,9 +12,6 @@
 
 #include "minishell.h"
 
-int	ansi_is_hex_digit(char c);
-int	ansi_hex_val(char c);
-
 static char	*escape_hex(char *s, int *i)
 {
 	int		v;
