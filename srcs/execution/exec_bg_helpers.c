@@ -39,5 +39,10 @@ int	exec_bg_parent(t_ast *ast, t_shell *shell, int outpipe[2], pid_t pid)
 		waitpid(pid, &bg_status, 0);
 		return (status);
 	}
-	return (exec_ast(ast->u_data.branch.right, shell));
+	ft_putstr_fd("[1] ", 1);
+	ft_putnbr_fd(pid, 1);
+	ft_putstr_fd("\n", 1);
+	if (ast->u_data.branch.right)
+		return (exec_ast(ast->u_data.branch.right, shell));
+	return (0);
 }

@@ -33,7 +33,7 @@ t_ast	*parse_amp_token(t_tok **cur, t_shell *shell, t_ast *left)
 	t_ast	*right;
 
 	if (!*cur || (*cur)->type == TOK_END)
-		return (left);
+		return (new_ast_bin(A_BG, left, NULL));
 	right = parse_and(cur, shell);
 	if (!right)
 		return (parse_err(left));
