@@ -44,6 +44,8 @@ static char	*handle_odd_backslash(int count, char next)
 
 	literal = count / 2;
 	prefix = make_backslashes(literal);
+	if (next == '\n')
+		return (prefix);
 	ch = process_char(next);
 	joined = append_val(prefix, ch);
 	free(ch);
