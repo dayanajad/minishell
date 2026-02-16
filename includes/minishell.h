@@ -145,6 +145,7 @@ typedef struct s_shell
 	int		heredoc_eof;
 	int		noninteractive_prompt_newline;
 	pid_t	stdout_filter_pid;
+	int		job_num;
 }	t_shell;
 
 typedef struct s_pipe_flags

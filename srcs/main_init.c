@@ -52,4 +52,5 @@ void	init_shell(t_shell *shell, char **envp)
 	shell->heredoc_eof = 0;
 	shell->noninteractive_prompt_newline = 0;
 	shell->stdout_filter_pid = -1;
+	shell->job_num = 0;
 }
