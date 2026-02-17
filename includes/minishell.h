@@ -455,9 +455,6 @@ void			set_readline_active(int active);
 bool			is_builtin(const char *name);
 int				exec_builtin(t_cmd *cmd, t_shell *shell);
 
-// srcs/builtins/builtin_utils_helpers.c
-int				exec_builtin_echo(t_cmd *cmd, t_shell *shell);
-
 // srcs/builtins/echo.c
 int				builtin_echo(char **av);
 
