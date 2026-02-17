@@ -63,6 +63,8 @@ int	exec_cmd_node(t_ast *ast, t_shell *shell)
 	if (ft_strcmp(cmd->av[0], "time") == 0 && !cmd->av[1])
 	{
 		ft_putstr_fd("real\t0m0.000s\n", STDERR_FILENO);
+		ft_putstr_fd("user\t0m0.000s\n", STDERR_FILENO);
+		ft_putstr_fd("sys\t0m0.000s\n", STDERR_FILENO);
 		return (0);
 	}
 	eq = ft_strchr(cmd->av[0], '=');
