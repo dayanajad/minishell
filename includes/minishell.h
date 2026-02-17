@@ -143,7 +143,6 @@ typedef struct s_shell
 	t_hdoc	*heredocs;
 	int		in_child;
 	int		heredoc_eof;
-	int		noninteractive_prompt_newline;
 	pid_t	stdout_filter_pid;
 	int		job_num;
 }	t_shell;
@@ -457,7 +456,6 @@ bool			is_builtin(const char *name);
 int				exec_builtin(t_cmd *cmd, t_shell *shell);
 
 // srcs/builtins/builtin_utils_helpers.c
-bool			echo_suppresses_newline(char **av);
 int				exec_builtin_echo(t_cmd *cmd, t_shell *shell);
 
 // srcs/builtins/echo.c

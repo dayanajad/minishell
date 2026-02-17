@@ -31,24 +31,17 @@ void	sanitize_line(char *line)
 		line[len - 1] = '\0';
 }
 
-static char	*get_first_line(t_shell *shell, bool interactive)
+static char	*get_first_line(bool interactive)
 {
 	char	*line;
 
 	if (interactive)
 	{
-		if (shell && shell->noninteractive_prompt_newline)
-		{
-			write(STDOUT_FILENO, "\n", 1);
-			shell->noninteractive_prompt_newline = 0;
-		}
 		set_readline_active(1);
 		line = readline("minishell$ ");
 		set_readline_active(0);
 		return (line);
 	}
-	if (shell)
-		shell->noninteractive_prompt_newline = 0;
 	return (read_line_nobuf(STDIN_FILENO));
 }
 
@@ -73,8 +66,9 @@ char	*read_input_line(t_shell *shell)
 	char	*next;
 	bool	interactive;
 
+	(void)shell;
 	interactive = isatty(STDIN_FILENO);
-	line = get_first_line(shell, interactive);
+	line = get_first_line(interactive);
 	quote = 0;
 	if (line)
 		quote = get_open_quote(line);
