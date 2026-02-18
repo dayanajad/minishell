@@ -483,7 +483,6 @@ int				export_apply_append(char *arg, char *key, char *val,
 void			print_export(t_env *env);
 
 // srcs/builtins/export_print_utils.c
-int				export_cmp_keys(const void *a, const void *b);
 int				export_env_count(t_env *env);
 
 // srcs/builtins/export_utils.c

@@ -12,20 +12,6 @@
 
 #include "minishell.h"
 
-int	export_cmp_keys(const void *a, const void *b)
-{
-	const t_env	*ea;
-	const t_env	*eb;
-
-	ea = *(const t_env **)a;
-	eb = *(const t_env **)b;
-	if (!ea || !ea->key)
-		return (-1);
-	if (!eb || !eb->key)
-		return (1);
-	return (ft_strcmp(ea->key, eb->key));
-}
-
 int	export_env_count(t_env *env)
 {
 	int	count;

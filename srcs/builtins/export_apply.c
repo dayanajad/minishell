@@ -34,6 +34,8 @@ int	export_apply(char *arg, char *key, char *value, t_env **env)
 		ret = print_invalid_id(arg, key);
 	else if (value)
 		export_set_env_var(env, key, value);
+	else if (!export_find_env_node(*env, key))
+		export_set_env_var(env, key, NULL);
 	free(key);
 	free(value);
 	return (ret);

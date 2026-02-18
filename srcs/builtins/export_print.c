@@ -75,11 +75,35 @@ static void	print_export_one(const t_env *env)
 	ft_putstr_fd("\n", 1);
 }
 
+static void	sort_env_arr(t_env **arr, int count)
+{
+	int		i;
+	int		j;
+	t_env	*tmp;
+
+	i = 0;
+	while (i < count - 1)
+	{
+		j = i + 1;
+		while (j < count)
+		{
+			if (ft_strcmp(arr[i]->key, arr[j]->key) > 0)
+			{
+				tmp = arr[i];
+				arr[i] = arr[j];
+				arr[j] = tmp;
+			}
+			j++;
+		}
+		i++;
+	}
+}
+
 static void	print_sorted_env(t_env **arr, int count)
 {
 	int	i;
 
-	qsort(arr, count, sizeof(t_env *), export_cmp_keys);
+	sort_env_arr(arr, count);
 	i = 0;
 	while (i < count)
 	{

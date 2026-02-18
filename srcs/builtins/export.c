@@ -63,6 +63,8 @@ int	builtin_export(char **av, t_env **env)
 	}
 	ret = 0;
 	i = 1;
+	if (av[i] && ft_strcmp(av[i], "--") == 0)
+		i++;
 	while (av[i])
 	{
 		rv = export_one(av[i], env);

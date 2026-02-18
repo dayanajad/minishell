@@ -51,9 +51,10 @@ static char	*read_next_piece(bool interactive)
 
 	if (interactive)
 	{
-		set_readline_active(1);
-		line = readline("> ");
-		set_readline_active(0);
+		write(STDOUT_FILENO, "> ", 2);
+		line = read_line_nobuf(STDIN_FILENO);
+		if (line)
+			sanitize_line(line);
 		return (line);
 	}
 	return (read_line_nobuf(STDIN_FILENO));
@@ -75,6 +76,12 @@ char	*read_input_line(t_shell *shell)
 	while (line && quote)
 	{
 		next = read_next_piece(interactive);
+		if (get_signal() == SIGINT)
+		{
+			free(line);
+			free(next);
+			return (ft_strdup(""));
+		}
 		if (!next)
 			return (handle_multiline_eof(line, quote));
 		line = join_piece(line, next, interactive);

@@ -33,7 +33,12 @@ void	handle_sigpipe(int sig)
 
 void	setup_signals_interactive(void)
 {
-	signal(SIGINT, handle_sigint);
+	struct sigaction	sa;
+
+	sa.sa_handler = handle_sigint;
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0;
+	sigaction(SIGINT, &sa, NULL);
 	signal(SIGQUIT, SIG_IGN);
 	signal(SIGPIPE, SIG_IGN);
 }
