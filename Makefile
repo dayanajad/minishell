@@ -21,7 +21,6 @@ SRCS        := srcs/main.c \
                srcs/main_process.c \
                srcs/main_run.c \
                srcs/builtins/builtin_utils.c \
-               srcs/builtins/builtin_utils_helpers.c \
                srcs/builtins/cd.c \
                srcs/builtins/echo.c \
                srcs/builtins/echo_utils.c \

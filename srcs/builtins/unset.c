@@ -49,15 +49,18 @@ static void	remove_env_node(t_env **env, const char *key)
 
 int	builtin_unset(char **av, t_env **env)
 {
-	int	i;
+	int		i;
+	bool	no_flags;
 
 	i = 1;
+	no_flags = false;
 	while (av[i])
 	{
-		if (av[i][0] == '-' && av[i][1] != '\0')
+		if (!no_flags && av[i][0] == '-' && av[i][1] != '\0')
 		{
 			if (ft_strcmp(av[i], "--") == 0)
 			{
+				no_flags = true;
 				i++;
 				continue ;
 			}
