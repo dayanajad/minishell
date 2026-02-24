@@ -99,20 +99,6 @@ static void	sort_env_arr(t_env **arr, int count)
 	}
 }
 
-static void	print_sorted_env(t_env **arr, int count)
-{
-	int	i;
-
-	sort_env_arr(arr, count);
-	i = 0;
-	while (i < count)
-	{
-		if (ft_strcmp(arr[i]->key, "_") != 0)
-			print_export_one(arr[i]);
-		i++;
-	}
-}
-
 void	print_export(t_env *env)
 {
 	t_env	**arr;
@@ -129,6 +115,13 @@ void	print_export(t_env *env)
 		arr[i++] = env;
 		env = env->next;
 	}
-	print_sorted_env(arr, count);
+	sort_env_arr(arr, count);
+	i = 0;
+	while (i < count)
+	{
+		if (ft_strcmp(arr[i]->key, "_") != 0)
+			print_export_one(arr[i]);
+		i++;
+	}
 	free(arr);
 }

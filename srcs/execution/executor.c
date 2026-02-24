@@ -50,16 +50,10 @@ static int	exec_builtin_with_redir(t_cmd *cmd, t_shell *shell)
 	return (ret);
 }
 
-int	exec_cmd_node(t_ast *ast, t_shell *shell)
+static int	handle_bare_cmd(t_cmd *cmd, t_shell *shell)
 {
-	t_cmd	*cmd;
 	char	*eq;
 
-	cmd = ast->u_data.cmd;
-	if (!cmd)
-		return (0);
-	if (!cmd->av || !cmd->av[0])
-		return (handle_redir_only(cmd, shell));
 	if (ft_strcmp(cmd->av[0], "time") == 0 && !cmd->av[1])
 	{
 		ft_putstr_fd("real\t0m0.000s\n", STDERR_FILENO);
@@ -73,6 +67,22 @@ int	exec_cmd_node(t_ast *ast, t_shell *shell)
 		builtin_export((char *[]){"export", cmd->av[0], NULL}, &shell->env);
 		return (0);
 	}
+	return (-1);
+}
+
+int	exec_cmd_node(t_ast *ast, t_shell *shell)
+{
+	t_cmd	*cmd;
+	int		ret;
+
+	cmd = ast->u_data.cmd;
+	if (!cmd)
+		return (0);
+	if (!cmd->av || !cmd->av[0])
+		return (handle_redir_only(cmd, shell));
+	ret = handle_bare_cmd(cmd, shell);
+	if (ret >= 0)
+		return (ret);
 	if (ft_strcmp(cmd->av[0], "env") == 0 && cmd->av[1])
 		return (exec_external_cmd(cmd, shell));
 	if (is_builtin(cmd->av[0]))

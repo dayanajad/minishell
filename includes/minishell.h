@@ -182,8 +182,6 @@ void			init_shell(t_shell *shell, char **envp);
 int				run_shell(t_shell *shell);
 
 // srcs/main_line.c
-int				is_blank_line(const char *line);
-void			sanitize_line(char *line);
 char			*read_input_line(t_shell *shell);
 
 // srcs/main_line_utils.c

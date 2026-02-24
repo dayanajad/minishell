@@ -49,13 +49,6 @@ static t_tok	*lex_and_prepare(char *line, t_shell *shell)
 	return (tokens);
 }
 
-static void	handle_parse_failure(t_shell *shell)
-{
-	shell->last_status = 2;
-	if (!isatty(STDIN_FILENO))
-		shell->should_exit = 1;
-}
-
 static void	execute_and_free(t_ast *ast, t_tok *tokens, t_shell *shell)
 {
 	if (ast)
@@ -64,18 +57,35 @@ static void	execute_and_free(t_ast *ast, t_tok *tokens, t_shell *shell)
 		free_ast(ast);
 	}
 	else
-		handle_parse_failure(shell);
+	{
+		shell->last_status = 2;
+		if (!isatty(STDIN_FILENO))
+			shell->should_exit = 1;
+	}
 	free_tokens(tokens);
+}
+
+static int	is_blank_line(const char *line)
+{
+	int	i;
+
+	i = 0;
+	while (line[i] && ft_strchr(" \t\r\n", line[i]))
+		i++;
+	return (line[i] == '\0');
 }
 
 void	process_line(char *line, t_shell *shell)
 {
 	t_tok	*tokens;
 	t_ast	*ast;
+	int		len;
 
 	if (!line)
 		return ;
-	sanitize_line(line);
+	len = ft_strlen(line);
+	if (len > 0 && line[len - 1] == '\n')
+		line[len - 1] = '\0';
 	if (is_blank_line(line))
 		return ;
 	if (isatty(STDIN_FILENO))

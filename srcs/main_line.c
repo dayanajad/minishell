@@ -12,17 +12,7 @@
 
 #include "minishell.h"
 
-int	is_blank_line(const char *line)
-{
-	int	i;
-
-	i = 0;
-	while (line[i] && ft_strchr(" \t\r\n", line[i]))
-		i++;
-	return (line[i] == '\0');
-}
-
-void	sanitize_line(char *line)
+static void	sanitize_line(char *line)
 {
 	int	len;
 
@@ -60,11 +50,29 @@ static char	*read_next_piece(bool interactive)
 	return (read_line_nobuf(STDIN_FILENO));
 }
 
+static char	*append_next(char *line, bool interactive, char *quote)
+{
+	char	*next;
+
+	next = read_next_piece(interactive);
+	if (get_signal() == SIGINT)
+	{
+		free(line);
+		free(next);
+		return (ft_strdup(""));
+	}
+	if (!next)
+		return (handle_multiline_eof(line, *quote));
+	line = join_piece(line, next, interactive);
+	if (line)
+		*quote = get_open_quote(line);
+	return (line);
+}
+
 char	*read_input_line(t_shell *shell)
 {
 	char	*line;
 	char	quote;
-	char	*next;
 	bool	interactive;
 
 	(void)shell;
@@ -75,19 +83,9 @@ char	*read_input_line(t_shell *shell)
 		quote = get_open_quote(line);
 	while (line && quote)
 	{
-		next = read_next_piece(interactive);
-		if (get_signal() == SIGINT)
-		{
-			free(line);
-			free(next);
-			return (ft_strdup(""));
-		}
-		if (!next)
-			return (handle_multiline_eof(line, quote));
-		line = join_piece(line, next, interactive);
-		if (!line)
-			return (NULL);
-		quote = get_open_quote(line);
+		line = append_next(line, interactive, &quote);
+		if (!line || !quote)
+			break ;
 	}
 	return (line);
 }
