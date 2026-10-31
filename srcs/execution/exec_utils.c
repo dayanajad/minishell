@@ -29,7 +29,11 @@ int	normalize_status(int status)
 	if (WIFEXITED(status))
 		return (WEXITSTATUS(status));
 	if (WIFSIGNALED(status))
+	{
+		if (WTERMSIG(status) == SIGQUIT)
+			ft_putstr_fd("Quit (core dumped)\n", STDERR_FILENO);
 		return (128 + WTERMSIG(status));
+	}
 	return (1);
 }
 
