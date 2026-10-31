@@ -19,7 +19,8 @@ static int	count_env_nodes(t_env *env)
 	count = 0;
 	while (env)
 	{
-		count++;
+		if (env->value)
+			count++;
 		env = env->next;
 	}
 	return (count);
@@ -53,14 +54,17 @@ char	**env_to_arr(t_env *env)
 	i = 0;
 	while (env)
 	{
-		arr[i] = create_env_str(env);
-		if (!arr[i])
+		if (env->value)
 		{
-			free_str_arr(arr);
-			return (NULL);
+			arr[i] = create_env_str(env);
+			if (!arr[i])
+			{
+				free_str_arr(arr);
+				return (NULL);
+			}
+			i++;
 		}
 		env = env->next;
-		i++;
 	}
 	arr[i] = NULL;
 	return (arr);
