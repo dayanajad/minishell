@@ -58,7 +58,8 @@ static void	execute_and_free(t_ast *ast, t_tok *tokens, t_shell *shell)
 	}
 	else
 	{
-		shell->last_status = 2;
+		if (get_signal() != SIGINT)
+			shell->last_status = 2;
 		if (!isatty(STDIN_FILENO))
 			shell->should_exit = 1;
 	}
@@ -88,6 +89,7 @@ void	process_line(char *line, t_shell *shell)
 		line[len - 1] = '\0';
 	if (is_blank_line(line))
 		return ;
+	set_signal(0);
 	if (isatty(STDIN_FILENO))
 		add_history(line);
 	shell->heredoc_eof = 0;

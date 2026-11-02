@@ -37,28 +37,47 @@ static void	handle_heredoc_eof(const char *delim, t_shell *shell)
 	shell->heredoc_eof = 1;
 }
 
-char	*read_heredoc(const char *delimiter, t_shell *shell, bool expand)
+void	heredoc_loop(int fd, const char *delimiter, t_shell *shell, bool expand)
 {
-	int		fd;
-	char	*temp_path;
 	char	*line;
 
-	fd = open_temp_file(&temp_path);
-	if (fd < 0)
-		return (NULL);
 	while (1)
 	{
 		line = read_heredoc_raw();
 		if (!line)
 		{
 			handle_heredoc_eof(delimiter, shell);
-			break ;
+			return ;
 		}
 		if (is_heredoc_delim(line, delimiter))
-			return (free(line), close(fd), temp_path);
+		{
+			free(line);
+			return ;
+		}
 		write_heredoc_line(fd, line, shell, expand);
 		free(line);
 	}
+}
+
+char	*read_heredoc(const char *delimiter, t_shell *shell, bool expand)
+{
+	int		fd;
+	char	*temp_path;
+	int		ok;
+
+	fd = open_temp_file(&temp_path);
+	if (fd < 0)
+		return (NULL);
+	ok = 1;
+	if (isatty(STDIN_FILENO))
+		ok = heredoc_in_child(fd, delimiter, shell, expand);
+	else
+		heredoc_loop(fd, delimiter, shell, expand);
 	close(fd);
+	if (!ok)
+	{
+		free(temp_path);
+		return (NULL);
+	}
 	return (temp_path);
 }

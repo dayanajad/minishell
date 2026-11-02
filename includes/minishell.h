@@ -426,6 +426,12 @@ bool			dup_and_close(int fd, int dest);
 
 // srcs/execution/heredoc.c
 char			*read_heredoc(const char *delim, t_shell *shell, bool expand);
+void			heredoc_loop(int fd, const char *delimiter, t_shell *shell,
+					bool expand);
+
+// srcs/execution/heredoc_child.c
+int				heredoc_in_child(int fd, const char *delimiter, t_shell *shell,
+					bool expand);
 
 // srcs/execution/heredoc_utils.c
 int				open_temp_file(char **path);

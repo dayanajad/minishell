@@ -45,6 +45,7 @@ SRCS        := srcs/main.c \
                srcs/execution/exec_utils_wait.c \
                srcs/execution/executor.c \
                srcs/execution/heredoc.c \
+               srcs/execution/heredoc_child.c \
                srcs/execution/heredoc_utils.c \
                srcs/execution/path.c \
                srcs/execution/redir_utils.c \
