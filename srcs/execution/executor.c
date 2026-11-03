@@ -6,7 +6,7 @@
 /*   By: dbinti-m <dbinti-m@student.42kl.edu.my>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/23 17:31:28 by dbinti-m          #+#    #+#             */
-/*   Updated: 2026/01/07 00:39:04 by dbinti-m         ###   ########.fr       */
+/*   Updated: 2026/11/03 22:54:16 by dbinti-m         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,6 +56,7 @@ static int	handle_bare_cmd(t_cmd *cmd, t_shell *shell)
 
 	if (ft_strcmp(cmd->av[0], "time") == 0 && !cmd->av[1])
 	{
+		ft_putstr_fd("\n", STDERR_FILENO);
 		ft_putstr_fd("real\t0m0.000s\n", STDERR_FILENO);
 		ft_putstr_fd("user\t0m0.000s\n", STDERR_FILENO);
 		ft_putstr_fd("sys\t0m0.000s\n", STDERR_FILENO);
