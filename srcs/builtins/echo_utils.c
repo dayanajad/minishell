@@ -20,7 +20,12 @@ int	write_all(int fd, const char *s, size_t len)
 	{
 		w = write(fd, s, len);
 		if (w < 0)
+		{
+			if (errno == EINTR)
+				continue ;
+			perror("minishell: echo: write error");
 			return (-1);
+		}
 		s += (size_t)w;
 		len -= (size_t)w;
 	}

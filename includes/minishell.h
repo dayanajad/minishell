@@ -13,6 +13,8 @@
 #ifndef MINISHELL_H
 # define MINISHELL_H
 
+# define PIPE_STAGE_CHILD 2
+
 # include "libft.h"
 # include <stdlib.h>
 # include <stdio.h>
@@ -336,6 +338,10 @@ t_ast			*parse_amp_token(t_tok **cur, t_shell *shell, t_ast *left);
 t_ast			*parse_err(t_ast *left);
 
 // srcs/parsing/parse_command.c
+int				fill_simple_cmd(t_tok **cur, t_cmd *cmd, t_shell *shell);
+int				copy_command_tokens(t_tok **cur, t_tok **tokens);
+int				collect_command_heredocs(t_tok *tokens, t_shell *shell);
+int				prepare_command(t_cmd *cmd, t_shell *shell);
 t_ast			*parse_subshell(t_tok **cur, t_shell *shell);
 
 // srcs/parsing/parse_utils.c
@@ -351,6 +357,7 @@ const char		*tok_repr_op(t_tok_type type);
 bool			parse_one_redir(t_tok **cur, t_redir **redirs, t_shell *shell);
 
 // srcs/parsing/parse_redir_heredoc.c
+int				normalize_heredoc_delimiter(t_tok *target);
 bool			handle_heredoc_redir(t_tok **cur, t_redir **redirs,
 					t_shell *shell, int fd);
 
@@ -379,6 +386,10 @@ int				exec_seq_node(t_ast *ast, t_shell *shell);
 int				exec_pipe_node(t_ast *ast, t_shell *shell);
 
 // srcs/execution/exec_pipe_utils.c
+int				exec_pipe_count(t_ast *ast);
+void			exec_pipe_collect(t_ast *ast, t_ast **stages, int *index);
+void			exec_pipe_child(t_ast *ast, t_shell *shell, int output,
+					int pipefd[2]);
 bool			exec_pipe_cmd_has_input(t_ast *ast);
 bool			exec_pipe_is_builtin_cmd(t_ast *ast);
 

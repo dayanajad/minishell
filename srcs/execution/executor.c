@@ -79,6 +79,8 @@ int	exec_cmd_node(t_ast *ast, t_shell *shell)
 	cmd = ast->u_data.cmd;
 	if (!cmd)
 		return (0);
+	if (!prepare_command(cmd, shell))
+		return (1);
 	if (!cmd->av || !cmd->av[0])
 		return (handle_redir_only(cmd, shell));
 	ret = handle_bare_cmd(cmd, shell);

@@ -10,78 +10,110 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "minishell.h"
+#include "pipeline.h"
 
-static void	exec_pipe_child_left(t_ast *ast, t_shell *shell, int pipefd[2])
+static int	init_pipeline(t_pipeline *st, t_ast *ast)
 {
-	int	devnull;
+	int	index;
 
-	shell->in_child = 1;
-	setup_signals_exec();
-	if (!isatty(STDIN_FILENO) && !exec_pipe_cmd_has_input(ast))
+	st->count = exec_pipe_count(ast);
+	st->output = -1;
+	st->status = 1;
+	st->stages = malloc(sizeof(*st->stages) * st->count);
+	st->pids = ft_calloc(st->count, sizeof(*st->pids));
+	if (!st->stages || !st->pids)
 	{
-		devnull = open("/dev/null", O_RDONLY);
-		if (devnull >= 0)
+		free(st->stages);
+		free(st->pids);
+		return (0);
+	}
+	index = 0;
+	exec_pipe_collect(ast, st->stages, &index);
+	return (1);
+}
+
+static int	spawn_stage(t_pipeline *st, t_shell *shell, int index)
+{
+	int	pipefd[2];
+
+	pipefd[0] = -1;
+	pipefd[1] = -1;
+	if (index > 0 && pipe(pipefd) < 0)
+		return (perror("minishell: pipe"), 0);
+	st->pids[index] = fork();
+	if (st->pids[index] == 0)
+		exec_pipe_child(st->stages[index], shell, st->output, pipefd);
+	if (pipefd[0] >= 0)
+		close(pipefd[0]);
+	if (st->pids[index] < 0)
+	{
+		if (pipefd[1] >= 0)
+			close(pipefd[1]);
+		return (perror("minishell: fork"), 0);
+	}
+	if (st->output >= 0)
+		close(st->output);
+	st->output = pipefd[1];
+	return (1);
+}
+
+static void	reap_pipeline(t_pipeline *st, int flags)
+{
+	int		index;
+	int		status;
+	pid_t	pid;
+
+	index = -1;
+	while (++index < st->count)
+	{
+		if (st->pids[index] <= 0)
+			continue ;
+		pid = waitpid(st->pids[index], &status, flags);
+		while (pid < 0 && errno == EINTR)
+			pid = waitpid(st->pids[index], &status, flags);
+		if (pid > 0)
 		{
-			dup2(devnull, STDIN_FILENO);
-			close(devnull);
+			if (index == st->count - 1)
+				st->status = normalize_status(status);
+			st->pids[index] = 0;
 		}
 	}
-	close(pipefd[0]);
-	dup2(pipefd[1], STDOUT_FILENO);
-	close(pipefd[1]);
-	exit(exec_ast(ast, shell));
 }
 
-static void	exec_pipe_child_right(t_ast *ast, t_shell *shell, int pipefd[2],
-		t_pipe_flags flags)
+static int	finish_pipeline(t_pipeline *st, int failed)
 {
-	shell->in_child = 1;
-	setup_signals_exec();
-	close(pipefd[1]);
-	if (flags.use_pipe)
+	int	index;
+
+	if (st->output >= 0)
+		close(st->output);
+	index = -1;
+	while (failed && ++index < st->count)
 	{
-		dup2(pipefd[0], STDIN_FILENO);
-		close(pipefd[0]);
+		if (st->pids[index] > 0)
+			kill(st->pids[index], SIGTERM);
 	}
-	if (!flags.use_pipe && !flags.keep_pipe_open)
-		close(pipefd[0]);
-	exit(exec_ast(ast, shell));
-}
-
-static int	wait_pipe_children(t_pipe_state *st, bool left_is_builtin)
-{
-	waitpid(st->pid_left, &st->status_left, 0);
-	(void)left_is_builtin;
-	waitpid(st->pid_right, &st->status, 0);
-	return (normalize_status(st->status));
+	reap_pipeline(st, 0);
+	free(st->stages);
+	free(st->pids);
+	if (failed)
+		return (1);
+	return (st->status);
 }
 
 int	exec_pipe_node(t_ast *ast, t_shell *shell)
 {
-	t_pipe_state	st;
-	t_pipe_flags	flags;
-	bool			left_is_builtin;
+	t_pipeline	st;
+	int			index;
+	int			failed;
 
-	if (pipe(st.pipefd) < 0)
-	{
-		perror("minishell: pipe");
+	if (!init_pipeline(&st, ast))
 		return (1);
+	index = st.count;
+	failed = 0;
+	while (--index >= 0 && !failed)
+	{
+		reap_pipeline(&st, WNOHANG);
+		failed = !spawn_stage(&st, shell, index);
 	}
-	st.right_has_stdin_redir = exec_pipe_cmd_has_input(
-			ast->u_data.branch.right);
-	st.right_is_builtin = exec_pipe_is_builtin_cmd(ast->u_data.branch.right);
-	left_is_builtin = exec_pipe_is_builtin_cmd(ast->u_data.branch.left);
-	flags.use_pipe = !st.right_has_stdin_redir;
-	flags.keep_pipe_open = (st.right_has_stdin_redir && !st.right_is_builtin);
-	st.pid_right = fork();
-	if (st.pid_right == 0)
-		exec_pipe_child_right(ast->u_data.branch.right, shell, st.pipefd,
-			flags);
-	close(st.pipefd[0]);
-	st.pid_left = fork();
-	if (st.pid_left == 0)
-		exec_pipe_child_left(ast->u_data.branch.left, shell, st.pipefd);
-	close(st.pipefd[1]);
-	return (wait_pipe_children(&st, left_is_builtin));
+	return (finish_pipeline(&st, failed));
 }

@@ -67,6 +67,12 @@ int	exec_external_cmd(t_cmd *cmd, t_shell *shell)
 	pid_t	pid;
 
 	update_underscore_var(shell, cmd);
+	if (shell->in_child == PIPE_STAGE_CHILD)
+	{
+		if (!apply_redirections(cmd->redirs, shell))
+			exit(1);
+		exec_external_child(cmd, shell);
+	}
 	pid = fork();
 	if (pid < 0)
 	{

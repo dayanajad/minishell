@@ -12,6 +12,20 @@
 
 #include "minishell.h"
 
+static int	inherited_sigpipe_ignored(void)
+{
+	static int			ignored = -1;
+	struct sigaction	sa;
+
+	if (ignored == -1)
+	{
+		ignored = 0;
+		if (sigaction(SIGPIPE, NULL, &sa) == 0)
+			ignored = (sa.sa_handler == SIG_IGN);
+	}
+	return (ignored);
+}
+
 void	handle_sigint(int sig)
 {
 	(void)sig;
@@ -35,6 +49,7 @@ void	setup_signals_interactive(void)
 {
 	struct sigaction	sa;
 
+	(void)inherited_sigpipe_ignored();
 	sa.sa_handler = handle_sigint;
 	sigemptyset(&sa.sa_mask);
 	sa.sa_flags = 0;
@@ -47,5 +62,8 @@ void	setup_signals_exec(void)
 {
 	signal(SIGINT, SIG_DFL);
 	signal(SIGQUIT, SIG_DFL);
-	signal(SIGPIPE, SIG_DFL);
+	if (inherited_sigpipe_ignored())
+		signal(SIGPIPE, SIG_IGN);
+	else
+		signal(SIGPIPE, SIG_DFL);
 }

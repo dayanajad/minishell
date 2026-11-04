@@ -12,7 +12,7 @@
 
 #include "minishell.h"
 
-static int	fill_simple_cmd(t_tok **cur, t_cmd *cmd, t_shell *shell)
+int	fill_simple_cmd(t_tok **cur, t_cmd *cmd, t_shell *shell)
 {
 	t_tok	*tok;
 
@@ -44,12 +44,13 @@ static t_ast	*parse_simple_cmd(t_tok **cur, t_shell *shell)
 	cmd = new_cmd();
 	if (!cmd)
 		return (NULL);
-	if (!fill_simple_cmd(cur, cmd, shell))
+	if (!copy_command_tokens(cur, &cmd->raw_toks)
+		|| !collect_command_heredocs(cmd->raw_toks, shell))
 	{
 		free_cmd(cmd);
 		return (NULL);
 	}
-	if (!cmd->av && !cmd->redirs)
+	if (!cmd->raw_toks)
 	{
 		syntax_err_tok(*cur);
 		free_cmd(cmd);

@@ -21,9 +21,6 @@ static int	prepare_tokens(t_tok **tokens, t_shell *shell)
 			shell->should_exit = 1;
 		return (0);
 	}
-	expand_tokens(tokens, shell);
-	expand_wildcards(tokens);
-	remove_quotes(*tokens);
 	return (1);
 }
 

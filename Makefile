@@ -73,6 +73,8 @@ SRCS        := srcs/main.c \
                srcs/parsing/lexer_word.c \
                srcs/parsing/lexer_word_utils.c \
                srcs/parsing/parse_command.c \
+               srcs/parsing/command_tokens.c \
+               srcs/parsing/prepare_command.c \
                srcs/parsing/parse_redir.c \
                srcs/parsing/parse_redir_heredoc.c \
                srcs/parsing/parse_redir_utils.c \

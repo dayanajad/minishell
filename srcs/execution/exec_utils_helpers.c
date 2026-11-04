@@ -49,7 +49,7 @@ void	exec_as_script(char *path, t_cmd *cmd, char **envp)
 	sh_av = malloc(sizeof(char *) * (count + 2));
 	if (!sh_av)
 		return ;
-	sh_av[0] = ft_strdup("/bin/sh");
+	sh_av[0] = ft_strdup("/bin/bash");
 	sh_av[1] = ft_strdup(path);
 	i = 1;
 	while (cmd->av[i])
