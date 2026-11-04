@@ -78,7 +78,9 @@ static char	**handle_double_dash(char **av, char **tmp_av)
 	{
 		tmp_av[0] = av[0];
 		tmp_av[1] = av[2];
-		tmp_av[2] = av[3];
+		tmp_av[2] = NULL;
+		if (av[2])
+			tmp_av[2] = av[3];
 		tmp_av[3] = NULL;
 		return (tmp_av);
 	}
