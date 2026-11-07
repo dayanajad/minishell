@@ -59,6 +59,7 @@ static char	*append_next(char *line, bool interactive, char *quote)
 	{
 		free(line);
 		free(next);
+		*quote = 0;
 		return (ft_strdup(""));
 	}
 	if (!next)
