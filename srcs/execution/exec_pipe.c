@@ -51,9 +51,15 @@ static void	exec_pipe_child_right(t_ast *ast, t_shell *shell, int pipefd[2],
 
 static int	wait_pipe_children(t_pipe_state *st, bool left_is_builtin)
 {
-	waitpid(st->pid_left, &st->status_left, 0);
+	while (waitpid(st->pid_left, &st->status_left, 0) == -1
+		&& errno == EINTR)
+		continue ;
 	(void)left_is_builtin;
-	waitpid(st->pid_right, &st->status, 0);
+	while (waitpid(st->pid_right, &st->status, 0) == -1)
+	{
+		if (errno != EINTR)
+			return (1);
+	}
 	return (normalize_status(st->status));
 }
 

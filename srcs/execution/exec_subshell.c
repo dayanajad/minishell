@@ -15,7 +15,6 @@
 int	exec_subshell_node(t_ast *ast, t_shell *shell)
 {
 	pid_t	pid;
-	int		status;
 
 	pid = fork();
 	if (pid < 0)
@@ -29,6 +28,5 @@ int	exec_subshell_node(t_ast *ast, t_shell *shell)
 		setup_signals_exec();
 		exit(exec_ast(ast->u_data.child, shell));
 	}
-	waitpid(pid, &status, 0);
-	return (normalize_status(status));
+	return (exec_wait_for_child(pid));
 }
